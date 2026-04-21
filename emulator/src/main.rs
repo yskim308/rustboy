@@ -1,12 +1,17 @@
 use std::{fs, io};
 
-use crate::bus::{
-    Bus,
-    cartridge::{self, Cartridge},
+use crate::{
+    bus::{
+        Bus,
+        cartridge::{self, Cartridge},
+    },
+    cpu::Cpu,
+    gameboy::Gameboy,
 };
 
 mod bus;
 mod cpu;
+mod gameboy;
 
 fn main() {
     let mut file_path = String::new();
@@ -20,4 +25,6 @@ fn main() {
 
     let cartridge = Cartridge::new(rom_data);
     let mut bus = Bus::new(cartridge);
+    let cpu = Cpu::new();
+    let gameboy = Gameboy::new(bus, cpu);
 }
