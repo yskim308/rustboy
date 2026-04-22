@@ -2,6 +2,8 @@ use crate::{bus::Bus, cpu::register::Registers};
 
 #[cfg(test)]
 mod cpu_tests;
+
+mod op_rload;
 pub mod register;
 
 pub struct Cpu {
@@ -39,14 +41,23 @@ impl Cpu {
     }
 
     pub fn execute(&mut self, opcode: u8, bus: &mut Bus) -> u8 {
+        // https://izik1.github.io/gbops/
+        // every opcode is developed through TDD, see cpu/tests
         match opcode {
             0x00 => 4,
+            0x0E => self.ld_c_u8(bus),
+            0x11 => self.ld_de_u16(bus),
+            0x21 => self.ld_hl_u16(bus),
+            0x47 => self.ld_b_a(),
             0xC3 => {
                 let value = self.fetch_u16(bus);
                 self.registers.pc = value;
                 16
             }
-            _ => panic!("Unimplemented opcode: {opcode} at pc {}", self.registers.pc),
+            _ => panic!(
+                "Unimplemented opcode: {:#04X} at pc {:#06X}",
+                opcode, self.registers.pc
+            ),
         }
     }
 }
