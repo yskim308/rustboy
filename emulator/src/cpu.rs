@@ -48,6 +48,7 @@ impl Cpu {
             0x0E => self.ld_c_u8(bus),
             0x11 => self.ld_de_u16(bus),
             0x21 => self.ld_hl_u16(bus),
+            0x2a => self.ld_a_hli(bus),
             0x47 => self.ld_b_a(),
             0xC3 => {
                 let value = self.fetch_u16(bus);

@@ -14,7 +14,10 @@ impl Bus {
     pub fn read_u8(&self, address: u16) -> u8 {
         match address {
             0x0000..=0x7FFF => self.cartridge.read_u8(address),
-            _ => panic!("Memory address {address} not implemented yet in Bus"),
+            _ => {
+                eprintln!("Memory address {address} not implemented yet in Bus");
+                todo!("handle")
+            }
         }
     }
 }

@@ -27,7 +27,7 @@ mod tests {
 
         let cycles = cpu.execute(0x0E, &mut bus);
         assert_eq!(cycles, 8);
-        assert_eq!(cpu.registers.d, 0x12);
+        assert_eq!(cpu.registers.c, 0x12);
     }
 
     #[test]
@@ -50,6 +50,20 @@ mod tests {
 
         assert_eq!(cycles, 12);
         assert_eq!(cpu.registers.get_hl(), 0x1234);
+    }
+
+    #[test]
+    fn execute_0x2A() {
+        // LD A, (HL+), sets A to mem[HL++], takes 8 cycles
+        let (mut cpu, mut bus) = setup(&[0x12]);
+        cpu.registers.set_hl(cpu.registers.pc);
+        cpu.registers.a = 0;
+
+        let cycles = cpu.execute(0x2A, &mut bus);
+
+        assert_eq!(cycles, 8);
+        assert_eq!(cpu.registers.a, 0x12);
+        assert_eq!(cpu.registers.get_hl(), 1);
     }
 
     #[test]
