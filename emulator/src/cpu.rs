@@ -1,5 +1,7 @@
 use crate::{bus::Bus, cpu::register::Registers};
 
+#[cfg(test)]
+mod cpu_tests;
 pub mod register;
 
 pub struct Cpu {
