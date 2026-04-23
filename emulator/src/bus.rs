@@ -28,8 +28,8 @@ impl Bus {
             0xE000..=0xFDFF => self.wram.read_u8(address - 0xE000), // echo ram
             0xFF00..=0xFF70 => self.read_io(address),
             _ => {
-                eprintln!("Memory address {address} not implemented yet in Bus");
-                todo!("handle")
+                eprintln!("Memory address {:#04X} not implemented yet in Bus", address);
+                todo!("Finish memory map for reads")
             }
         }
     }
@@ -41,8 +41,8 @@ impl Bus {
             0xE000..=0xFDFF => self.wram.write_u8(address - 0xE000, data), // echo ram
             0xFF00..=0xFF70 => self.write_io(address, data),
             _ => {
-                eprintln!("Memory address {address} not implemented yet in Bus");
-                todo!("handle")
+                eprintln!("Memory address {:#04X} not implemented yet in Bus", address);
+                todo!("Finish memory map for writes")
             }
         }
     }
