@@ -1,11 +1,13 @@
-use crate::bus::{cartridge::Cartridge, wram::Wram};
+use crate::bus::{cartridge::Cartridge, serial::Serial, wram::Wram};
 
 pub mod cartridge;
+pub mod serial;
 pub mod wram;
 
 pub struct Bus {
     cartridge: Cartridge,
     wram: Wram,
+    serial: Serial,
     io_bucket: [u8; 128], // temporary for io stubs
 }
 
@@ -14,6 +16,7 @@ impl Bus {
         Self {
             cartridge,
             wram: Wram::new(),
+            serial: Serial::new(),
             io_bucket: [0; 128],
         }
     }
@@ -33,6 +36,7 @@ impl Bus {
 
     fn read_io(&self, address: u16) -> u8 {
         match address {
+            0xFF01..=0xFF02 => self.serial.read(address),
             _ => self.io_bucket[address as usize],
         }
     }
