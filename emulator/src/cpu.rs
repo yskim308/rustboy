@@ -3,7 +3,9 @@ use crate::{bus::Bus, cpu::register::Registers};
 #[cfg(test)]
 mod cpu_tests;
 
+mod op_jumps;
 mod op_rload;
+
 pub mod register;
 
 pub struct Cpu {
@@ -106,11 +108,12 @@ impl Cpu {
             0x7C => self.ld_a_h(),
             0x7D => self.ld_a_l(),
             0x7F => self.ld_a_a(),
-            0xC3 => {
-                let value = self.fetch_u16(bus);
-                self.registers.pc = value;
-                16
-            }
+            0xC2 => self.jp_nz_u16(bus),
+            0xC3 => self.jp_u16(bus),
+            0xCA => self.jp_z_u16(bus),
+            0xD2 => self.jp_nc_u16(bus),
+            0xDA => self.jp_c_u16(bus),
+            0xE9 => self.jp_hl(bus),
             0xF9 => self.ld_sp_hl(),
             _ => panic!(
                 "Unimplemented opcode: {:#04X} at pc {:#06X}",
