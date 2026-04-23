@@ -26,6 +26,18 @@ impl Cpu {
         self.registers.set_hl(self.registers.get_hl() + 1);
         8
     }
+
+    // 0x40: LD B, B
+    pub(super) fn ld_b_b(&mut self) -> u8 {
+        4
+    }
+
+    // 0x41: LD B, C
+    pub(super) fn ld_b_c(&mut self) -> u8 {
+        self.registers.b = self.registers.c;
+        4
+    }
+
     // 0x47:
     pub(super) fn ld_b_a(&mut self) -> u8 {
         self.registers.b = self.registers.a;

@@ -53,17 +53,21 @@ mod tests {
     }
 
     #[test]
-    fn execute_0x2A() {
-        // LD A, (HL+), sets A to mem[HL++], takes 8 cycles
-        let (mut cpu, mut bus) = setup(&[0x12]);
-        cpu.registers.set_hl(cpu.registers.pc);
-        cpu.registers.a = 0;
+    fn execute_0x40() {
+        // LD B, B
+        let (mut cpu, mut bus) = setup(&[]);
 
-        let cycles = cpu.execute(0x2A, &mut bus);
+        let cycles = cpu.execute(0x40, &mut bus);
+        assert_eq!(cycles, 4);
+    }
 
-        assert_eq!(cycles, 8);
-        assert_eq!(cpu.registers.a, 0x12);
-        assert_eq!(cpu.registers.get_hl(), 1);
+    #[test]
+    fn execute_0x41() {
+        // LD B, C
+        let (mut cpu, mut bus) = setup(&[]);
+        let cycles = cpu.execute(0x41, &mut bus);
+        assert_eq!(cycles, 4);
+        assert_eq!(cpu.registers.b, cpu.registers.c);
     }
 
     #[test]
@@ -80,6 +84,7 @@ mod tests {
         assert_eq!(cpu.registers.a, 1);
     }
 
+    // todo: move this to the jump tests
     #[test]
     fn execute_0xC3() {
         // JP u16, sets pc to u16, takes 16 cycles
