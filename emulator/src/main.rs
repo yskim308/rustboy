@@ -1,7 +1,7 @@
 use std::{env, fs, io};
 
 use crate::{
-    bus::{Bus, cartridge::Cartridge},
+    bus::{Bus, cartridge::Cartridge, wram::Wram},
     cpu::Cpu,
     gameboy::Gameboy,
 };
