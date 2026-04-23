@@ -18,7 +18,7 @@ impl Cpu {
     }
 
     fn advance_pc(&mut self) {
-        self.registers.pc += self.registers.pc.wrapping_add(1);
+        self.registers.pc = self.registers.pc.wrapping_add(1);
     }
 
     pub fn step(&mut self, bus: &mut Bus) -> u8 {
