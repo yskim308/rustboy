@@ -27,9 +27,14 @@ impl Registers {
             pc: 0x0100, // Entry point for the ROM
         }
     }
+    // stack operations
     pub fn decrement_sp(&mut self) {
         self.sp = self.sp.wrapping_sub(1);
     }
+    pub fn increment_sp(&mut self) {
+        self.sp = self.sp.wrapping_add(1);
+    }
+
     // Flag register where [z, n, h, c] are upper four bits
     // setting flag registers (rustfmt ain't letting me inline these :/)
     fn set_flag(&mut self, mask: u8, val: bool) {

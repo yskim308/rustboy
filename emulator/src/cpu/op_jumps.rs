@@ -1,3 +1,5 @@
+use std::{f64::consts::TAU, panic::RefUnwindSafe};
+
 use crate::{bus::Bus, cpu::Cpu};
 
 impl Cpu {
@@ -21,6 +23,7 @@ impl Cpu {
         }
     }
 
+    // ============= stack helpers ================
     fn push_u8(&mut self, bus: &mut Bus, data: u8) {
         self.registers.decrement_sp();
         bus.write_u8(self.registers.sp, data);
@@ -30,6 +33,29 @@ impl Cpu {
         let [low, high] = data.to_le_bytes();
         self.push_u8(bus, high);
         self.push_u8(bus, low);
+    }
+
+    fn pop_u8(&mut self, bus: &mut Bus) -> u8 {
+        let value = bus.read_u8(self.registers.sp);
+        self.registers.increment_sp();
+
+        value
+    }
+
+    fn pop_u16(&mut self, bus: &mut Bus) -> u16 {
+        let low = self.pop_u8(bus);
+        let high = self.pop_u8(bus);
+        u16::from_le_bytes([low, high])
+    }
+
+    fn conditional_ret(&mut self, bus: &mut Bus, condition: bool) -> u8 {
+        if condition {
+            let return_address = self.pop_u16(bus);
+            self.registers.pc = return_address;
+            20
+        } else {
+            8
+        }
     }
 
     fn conditional_call(&mut self, bus: &mut Bus, condition: bool) -> u8 {
@@ -42,6 +68,36 @@ impl Cpu {
         } else {
             12
         }
+    }
+
+    // ========== RETURNS ==================
+    pub(super) fn ret_nz(&mut self, bus: &mut Bus) -> u8 {
+        self.conditional_ret(bus, !self.registers.get_z())
+    }
+
+    pub(super) fn ret_z(&mut self, bus: &mut Bus) -> u8 {
+        self.conditional_ret(bus, self.registers.get_z())
+    }
+
+    pub(super) fn ret(&mut self, bus: &mut Bus) -> u8 {
+        let target_address = self.pop_u16(bus);
+        self.registers.pc = target_address;
+        16
+    }
+
+    pub(super) fn ret_nc(&mut self, bus: &mut Bus) -> u8 {
+        self.conditional_ret(bus, !self.registers.get_c())
+    }
+
+    pub(super) fn ret_c(&mut self, bus: &mut Bus) -> u8 {
+        self.conditional_ret(bus, self.registers.get_c())
+    }
+
+    pub(super) fn reti(&mut self, bus: &mut Bus) -> u8 {
+        let target_address = self.pop_u16(bus);
+        self.registers.pc = target_address;
+        self.ime = true;
+        16
     }
 
     // ============ CALLS ==================

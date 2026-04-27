@@ -10,13 +10,17 @@ pub mod register;
 
 pub struct Cpu {
     registers: Registers,
+    ime: bool,
     // todo: Other CPU state like interrupts
 }
 
 impl Cpu {
     pub fn new() -> Self {
         let registers = Registers::new();
-        Self { registers }
+        Self {
+            registers,
+            ime: false,
+        }
     }
 
     fn advance_pc(&mut self) {
@@ -113,14 +117,20 @@ impl Cpu {
             0x7C => self.ld_a_h(),
             0x7D => self.ld_a_l(),
             0x7F => self.ld_a_a(),
+            0xC0 => self.ret_nz(bus),
             0xC2 => self.jp_nz_u16(bus),
             0xC3 => self.jp_u16(bus),
             0xC4 => self.call_nz_u16(bus),
+            0xC8 => self.ret_z(bus),
+            0xC9 => self.ret(bus),
             0xCA => self.jp_z_u16(bus),
             0xCC => self.call_z_u16(bus),
             0xCD => self.call_u16(bus),
+            0xD0 => self.ret_nc(bus),
             0xD2 => self.jp_nc_u16(bus),
             0xD4 => self.call_nc_u16(bus),
+            0xD8 => self.ret_c(bus),
+            0xD9 => self.reti(bus),
             0xDA => self.jp_c_u16(bus),
             0xDC => self.call_c_u16(bus),
             0xE9 => self.jp_hl(bus),
