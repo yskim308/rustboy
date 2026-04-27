@@ -46,6 +46,31 @@ impl Cpu {
         value
     }
 
+    // ============= stack helpers ================
+    fn push_u8(&mut self, bus: &mut Bus, data: u8) {
+        self.registers.decrement_sp();
+        bus.write_u8(self.registers.sp, data);
+    }
+
+    fn push_u16(&mut self, bus: &mut Bus, data: u16) {
+        let [low, high] = data.to_le_bytes();
+        self.push_u8(bus, high);
+        self.push_u8(bus, low);
+    }
+
+    fn pop_u8(&mut self, bus: &mut Bus) -> u8 {
+        let value = bus.read_u8(self.registers.sp);
+        self.registers.increment_sp();
+
+        value
+    }
+
+    fn pop_u16(&mut self, bus: &mut Bus) -> u16 {
+        let low = self.pop_u8(bus);
+        let high = self.pop_u8(bus);
+        u16::from_le_bytes([low, high])
+    }
+
     pub fn execute(&mut self, opcode: u8, bus: &mut Bus) -> u8 {
         // https://izik1.github.io/gbops/
         // every opcode is developed through TDD, see cpu/tests
@@ -121,20 +146,28 @@ impl Cpu {
             0xC2 => self.jp_nz_u16(bus),
             0xC3 => self.jp_u16(bus),
             0xC4 => self.call_nz_u16(bus),
+            0xC7 => self.rst(bus, 0x00),
             0xC8 => self.ret_z(bus),
             0xC9 => self.ret(bus),
             0xCA => self.jp_z_u16(bus),
             0xCC => self.call_z_u16(bus),
             0xCD => self.call_u16(bus),
+            0xCF => self.rst(bus, 0x08),
             0xD0 => self.ret_nc(bus),
             0xD2 => self.jp_nc_u16(bus),
             0xD4 => self.call_nc_u16(bus),
+            0xD7 => self.rst(bus, 0x10),
             0xD8 => self.ret_c(bus),
             0xD9 => self.reti(bus),
             0xDA => self.jp_c_u16(bus),
             0xDC => self.call_c_u16(bus),
+            0xDF => self.rst(bus, 0x18),
+            0xE7 => self.rst(bus, 0x20),
             0xE9 => self.jp_hl(bus),
+            0xEF => self.rst(bus, 0x28),
+            0xF7 => self.rst(bus, 0x30),
             0xF9 => self.ld_sp_hl(),
+            0xFF => self.rst(bus, 0x38),
             _ => panic!(
                 "Unimplemented opcode: {:#04X} at pc {:#06X}",
                 opcode, self.registers.pc

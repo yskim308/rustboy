@@ -23,31 +23,6 @@ impl Cpu {
         }
     }
 
-    // ============= stack helpers ================
-    fn push_u8(&mut self, bus: &mut Bus, data: u8) {
-        self.registers.decrement_sp();
-        bus.write_u8(self.registers.sp, data);
-    }
-
-    fn push_u16(&mut self, bus: &mut Bus, data: u16) {
-        let [low, high] = data.to_le_bytes();
-        self.push_u8(bus, high);
-        self.push_u8(bus, low);
-    }
-
-    fn pop_u8(&mut self, bus: &mut Bus) -> u8 {
-        let value = bus.read_u8(self.registers.sp);
-        self.registers.increment_sp();
-
-        value
-    }
-
-    fn pop_u16(&mut self, bus: &mut Bus) -> u16 {
-        let low = self.pop_u8(bus);
-        let high = self.pop_u8(bus);
-        u16::from_le_bytes([low, high])
-    }
-
     fn conditional_ret(&mut self, bus: &mut Bus, condition: bool) -> u8 {
         if condition {
             let return_address = self.pop_u16(bus);
@@ -119,6 +94,12 @@ impl Cpu {
 
     pub(super) fn call_c_u16(&mut self, bus: &mut Bus) -> u8 {
         self.conditional_call(bus, self.registers.get_c())
+    }
+
+    pub(super) fn rst(&mut self, bus: &mut Bus, address: u16) -> u8 {
+        self.push_u16(bus, self.registers.pc);
+        self.registers.pc = address;
+        16
     }
 
     // ========== RELATIVE JUMPS =============
