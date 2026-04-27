@@ -21,6 +21,29 @@ impl Cpu {
         }
     }
 
+    fn push_u8(&mut self, bus: &mut Bus, data: u8) {
+        self.registers.decrement_sp();
+        bus.write_u8(self.registers.sp, data);
+    }
+
+    fn push_u16(&mut self, bus: &mut Bus, data: u16) {
+        let [low, high] = data.to_le_bytes();
+        self.push_u8(bus, high);
+        self.push_u8(bus, low);
+    }
+
+    fn conditional_call(&mut self, bus: &mut Bus, condition: bool) -> u8 {
+        let target_address = self.fetch_u16(bus);
+        if condition {
+            self.push_u16(bus, self.registers.pc);
+
+            self.registers.pc = target_address;
+            24
+        } else {
+            12
+        }
+    }
+
     // ========== RELATIVE JUMPS =============
     pub(super) fn jr_i8(&mut self, bus: &mut Bus) -> u8 {
         self.conditional_rel_jump(bus, true)
