@@ -12,7 +12,6 @@ pub struct Registers {
 }
 
 impl Registers {
-    // todo: double check with docs to see if these initial values are correct
     pub fn new() -> Self {
         Self {
             a: 0x01,

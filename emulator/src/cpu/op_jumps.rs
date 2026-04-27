@@ -1,5 +1,3 @@
-use std::{f64::consts::TAU, panic::RefUnwindSafe};
-
 use crate::{bus::Bus, cpu::Cpu};
 
 impl Cpu {
@@ -17,9 +15,9 @@ impl Cpu {
         let value = self.fetch_u8(bus) as i8;
         if condition {
             self.registers.pc = self.registers.pc.wrapping_add_signed(value as i16);
-            3
+            12
         } else {
-            2
+            8
         }
     }
 
@@ -146,7 +144,7 @@ impl Cpu {
         self.conditional_jump(bus, self.registers.get_c())
     }
 
-    pub(super) fn jp_hl(&mut self, bus: &mut Bus) -> u8 {
+    pub(super) fn jp_hl(&mut self, _bus: &mut Bus) -> u8 {
         self.registers.pc = self.registers.get_hl();
         4
     }
