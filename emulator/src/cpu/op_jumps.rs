@@ -44,6 +44,27 @@ impl Cpu {
         }
     }
 
+    // ============ CALLS ==================
+    pub(super) fn call_nz_u16(&mut self, bus: &mut Bus) -> u8 {
+        self.conditional_call(bus, !self.registers.get_z())
+    }
+
+    pub(super) fn call_z_u16(&mut self, bus: &mut Bus) -> u8 {
+        self.conditional_call(bus, self.registers.get_z())
+    }
+
+    pub(super) fn call_u16(&mut self, bus: &mut Bus) -> u8 {
+        self.conditional_call(bus, true)
+    }
+
+    pub(super) fn call_nc_u16(&mut self, bus: &mut Bus) -> u8 {
+        self.conditional_call(bus, !self.registers.get_c())
+    }
+
+    pub(super) fn call_c_u16(&mut self, bus: &mut Bus) -> u8 {
+        self.conditional_call(bus, self.registers.get_c())
+    }
+
     // ========== RELATIVE JUMPS =============
     pub(super) fn jr_i8(&mut self, bus: &mut Bus) -> u8 {
         self.conditional_rel_jump(bus, true)
