@@ -6,6 +6,7 @@ mod cpu_tests;
 mod op_jumps;
 mod op_memload;
 mod op_rload;
+mod op_stack;
 
 pub mod register;
 
@@ -166,9 +167,11 @@ impl Cpu {
             0x7E => self.ld_a_at_hl(bus),
             0x7F => self.ld_a_a(),
             0xC0 => self.ret_nz(bus),
+            0xC1 => self.pop_bc(bus),
             0xC2 => self.jp_nz_u16(bus),
             0xC3 => self.jp_u16(bus),
             0xC4 => self.call_nz_u16(bus),
+            0xC5 => self.push_bc(bus),
             0xC7 => self.rst(bus, 0x00),
             0xC8 => self.ret_z(bus),
             0xC9 => self.ret(bus),
@@ -177,17 +180,23 @@ impl Cpu {
             0xCD => self.call_u16(bus),
             0xCF => self.rst(bus, 0x08),
             0xD0 => self.ret_nc(bus),
+            0xD1 => self.pop_de(bus),
             0xD2 => self.jp_nc_u16(bus),
             0xD4 => self.call_nc_u16(bus),
+            0xD5 => self.push_de(bus),
             0xD7 => self.rst(bus, 0x10),
             0xD8 => self.ret_c(bus),
             0xD9 => self.reti(bus),
             0xDA => self.jp_c_u16(bus),
             0xDC => self.call_c_u16(bus),
             0xDF => self.rst(bus, 0x18),
+            0xE1 => self.pop_hl(bus),
+            0xE5 => self.push_hl(bus),
             0xE7 => self.rst(bus, 0x20),
             0xE9 => self.jp_hl(bus),
             0xEF => self.rst(bus, 0x28),
+            0xF1 => self.pop_af(bus),
+            0xF5 => self.push_af(bus),
             0xF7 => self.rst(bus, 0x30),
             0xF9 => self.ld_sp_hl(),
             0xFF => self.rst(bus, 0x38),
