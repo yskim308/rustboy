@@ -8,6 +8,7 @@ mod tests {
     };
 
     const MEM_ADDR: u16 = 0xC123;
+    const IO_ADDR: u16 = 0xFF42;
 
     fn setup(instruction_bytes: &[u8]) -> (Cpu, Bus) {
         let mut cpu = Cpu::new();
@@ -222,5 +223,79 @@ mod tests {
         assert_eq!(cycles, 8);
         assert_eq!(bus.read_u8(MEM_ADDR), 0x23);
         assert_eq!(cpu.registers.get_hl(), MEM_ADDR);
+    }
+
+    #[test]
+    fn execute_0xE0() {
+        let (mut cpu, mut bus) = setup(&[0x42]);
+        cpu.registers.a = 0x12;
+
+        let cycles = cpu.execute(0xE0, &mut bus);
+
+        assert_eq!(cycles, 12);
+        assert_eq!(bus.read_u8(IO_ADDR), 0x12);
+        assert_eq!(cpu.registers.a, 0x12);
+    }
+
+    #[test]
+    fn execute_0xE2() {
+        let (mut cpu, mut bus) = setup(&[]);
+        cpu.registers.c = 0x42;
+        cpu.registers.a = 0x12;
+
+        let cycles = cpu.execute(0xE2, &mut bus);
+
+        assert_eq!(cycles, 8);
+        assert_eq!(bus.read_u8(IO_ADDR), 0x12);
+        assert_eq!(cpu.registers.a, 0x12);
+    }
+
+    #[test]
+    fn execute_0xEA() {
+        let (mut cpu, mut bus) = setup(&[0x23, 0xC1]);
+        cpu.registers.a = 0x12;
+
+        let cycles = cpu.execute(0xEA, &mut bus);
+
+        assert_eq!(cycles, 16);
+        assert_eq!(bus.read_u8(MEM_ADDR), 0x12);
+        assert_eq!(cpu.registers.a, 0x12);
+    }
+
+    #[test]
+    fn execute_0xF0() {
+        let (mut cpu, mut bus) = setup(&[0x42]);
+        bus.write_u8(IO_ADDR, 0x12);
+        cpu.registers.a = 0x00;
+
+        let cycles = cpu.execute(0xF0, &mut bus);
+
+        assert_eq!(cycles, 12);
+        assert_eq!(cpu.registers.a, 0x12);
+    }
+
+    #[test]
+    fn execute_0xF2() {
+        let (mut cpu, mut bus) = setup(&[]);
+        cpu.registers.c = 0x42;
+        bus.write_u8(IO_ADDR, 0x12);
+        cpu.registers.a = 0x00;
+
+        let cycles = cpu.execute(0xF2, &mut bus);
+
+        assert_eq!(cycles, 8);
+        assert_eq!(cpu.registers.a, 0x12);
+    }
+
+    #[test]
+    fn execute_0xFA() {
+        let (mut cpu, mut bus) = setup(&[0x23, 0xC1]);
+        bus.write_u8(MEM_ADDR, 0x12);
+        cpu.registers.a = 0x00;
+
+        let cycles = cpu.execute(0xFA, &mut bus);
+
+        assert_eq!(cycles, 16);
+        assert_eq!(cpu.registers.a, 0x12);
     }
 }

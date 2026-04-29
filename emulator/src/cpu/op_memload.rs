@@ -81,4 +81,41 @@ impl Cpu {
     ld_at_hl_reg!(ld_at_hl_e, e);
     ld_at_hl_reg!(ld_at_hl_h, h);
     ld_at_hl_reg!(ld_at_hl_l, l);
+
+    pub(super) fn ld_at_u16_a(&mut self, bus: &mut Bus) -> u8 {
+        let value = self.fetch_u16(bus);
+        bus.write_u8(value, self.registers.a);
+        16
+    }
+
+    pub(super) fn ld_a_at_u16(&mut self, bus: &mut Bus) -> u8 {
+        let address = self.fetch_u16(bus);
+        let value = bus.read_u8(address);
+        self.registers.a = value;
+        16
+    }
+
+    // ============== built in vector (0xFF00 + ...) opcodes =============
+    pub(super) fn ldh_at_u8_a(&mut self, bus: &mut Bus) -> u8 {
+        let offset = self.fetch_u8(bus);
+        bus.write_u8(0xFF00 + offset as u16, self.registers.a);
+        12
+    }
+
+    pub(super) fn ldh_a_at_u8(&mut self, bus: &mut Bus) -> u8 {
+        let offset = self.fetch_u8(bus);
+        let value = bus.read_u8(0xFF00 + offset as u16);
+        self.registers.a = value;
+        12
+    }
+
+    pub(super) fn ldh_at_c_a(&mut self, bus: &mut Bus) -> u8 {
+        bus.write_u8(0xFF00 + self.registers.c as u16, self.registers.a);
+        8
+    }
+
+    pub(super) fn ldh_a_at_c(&mut self, bus: &mut Bus) -> u8 {
+        self.registers.a = bus.read_u8(0xFF00 + self.registers.c as u16);
+        8
+    }
 }
