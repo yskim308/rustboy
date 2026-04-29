@@ -3,6 +3,7 @@ use crate::{bus::Bus, cpu::register::Registers};
 #[cfg(test)]
 mod cpu_tests;
 
+mod op_alu8;
 mod op_jumps;
 mod op_memload;
 mod op_rload;
@@ -166,6 +167,14 @@ impl Cpu {
             0x7D => self.ld_a_l(),
             0x7E => self.ld_a_at_hl(bus),
             0x7F => self.ld_a_a(),
+            0x80 => self.add_a_b(),
+            0x81 => self.add_a_c(),
+            0x82 => self.add_a_d(),
+            0x83 => self.add_a_e(),
+            0x84 => self.add_a_h(),
+            0x85 => self.add_a_l(),
+            0x86 => self.add_a_at_hl(bus),
+            0x87 => self.add_a_a(),
             0xC0 => self.ret_nz(bus),
             0xC1 => self.pop_bc(bus),
             0xC2 => self.jp_nz_u16(bus),
