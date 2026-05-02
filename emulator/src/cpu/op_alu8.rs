@@ -18,8 +18,26 @@ macro_rules! adc_a_r {
     };
 }
 
+macro_rules! sub_a_r {
+    ($func_name: ident, $source_r: ident) => {
+        pub(super) fn $func_name(&mut self) -> u8 {
+            self.sub_a_u8(self.registers.$source_r, false);
+            4
+        }
+    };
+}
+
+macro_rules! sbc_a_r {
+    ($func_name: ident, $source_r: ident) => {
+        pub(super) fn $func_name(&mut self) -> u8 {
+            self.sub_a_u8(self.registers.$source_r, self.registers.get_c());
+            4
+        }
+    };
+}
+
 impl Cpu {
-    // ============= ADD/ADC instructions ==================
+    // ============= helpers =============
     fn add_a_u8(&mut self, val: u8, is_carry: bool) {
         let a = self.registers.a as u16;
         let source_val = val as u16;
@@ -38,6 +56,25 @@ impl Cpu {
         self.registers.set_c(carry_out);
     }
 
+    fn sub_a_u8(&mut self, val: u8, is_carry: bool) {
+        let a = self.registers.a as u16;
+        let source_val = val as u16;
+        let carry_in = is_carry as u16;
+
+        let result = a.wrapping_sub(source_val).wrapping_sub(carry_in);
+        let half_carry = (a & 0x0F) < (source_val & 0x0F) + carry_in;
+        let carry_out = a < source_val + carry_in;
+
+        let result = result as u8;
+        self.registers.a = result;
+
+        self.registers.set_z(result == 0);
+        self.registers.set_n(true);
+        self.registers.set_h(half_carry);
+        self.registers.set_c(carry_out);
+    }
+
+    // ============= ADD/ADC instructions ==================
     add_a_r!(add_a_b, b);
     add_a_r!(add_a_c, c);
     add_a_r!(add_a_d, d);
@@ -63,6 +100,35 @@ impl Cpu {
     pub(super) fn adc_a_at_hl(&mut self, bus: &mut Bus) -> u8 {
         let val_at_hl = bus.read_u8(self.registers.get_hl());
         self.add_a_u8(val_at_hl, self.registers.get_c());
+        8
+    }
+
+    // ============== SUB/SBC ===============
+    sub_a_r!(sub_a_b, b);
+    sub_a_r!(sub_a_c, c);
+    sub_a_r!(sub_a_d, d);
+    sub_a_r!(sub_a_e, e);
+    sub_a_r!(sub_a_h, h);
+    sub_a_r!(sub_a_l, l);
+    sub_a_r!(sub_a_a, a);
+
+    pub(super) fn sub_a_at_hl(&mut self, bus: &mut Bus) -> u8 {
+        let val_at_hl = bus.read_u8(self.registers.get_hl());
+        self.sub_a_u8(val_at_hl, false);
+        8
+    }
+
+    sbc_a_r!(sbc_a_b, b);
+    sbc_a_r!(sbc_a_c, c);
+    sbc_a_r!(sbc_a_d, d);
+    sbc_a_r!(sbc_a_e, e);
+    sbc_a_r!(sbc_a_h, h);
+    sbc_a_r!(sbc_a_l, l);
+    sbc_a_r!(sbc_a_a, a);
+
+    pub(super) fn sbc_a_at_hl(&mut self, bus: &mut Bus) -> u8 {
+        let val_at_hl = bus.read_u8(self.registers.get_hl());
+        self.sub_a_u8(val_at_hl, self.registers.get_c());
         8
     }
 }
