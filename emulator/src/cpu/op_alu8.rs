@@ -63,6 +63,15 @@ macro_rules! or_a_r {
     };
 }
 
+macro_rules! cp_a_r {
+    ($func_name: ident, $source_r: ident) => {
+        pub(super) fn $func_name(&mut self) -> u8 {
+            self.cp_a_u8(self.registers.$source_r);
+            4
+        }
+    };
+}
+
 impl Cpu {
     // ============= helpers =============
     fn or_a_u8(&mut self, val: u8) {
@@ -114,6 +123,20 @@ impl Cpu {
         self.registers.a = result;
 
         self.registers.set_z(result == 0);
+        self.registers.set_n(true);
+        self.registers.set_h(half_carry);
+        self.registers.set_c(carry_out);
+    }
+
+    fn cp_a_u8(&mut self, val: u8) {
+        let a = self.registers.a as u16;
+        let source_val = val as u16;
+
+        let result = a.wrapping_sub(source_val);
+        let half_carry = (a & 0x0F) < (source_val & 0x0F);
+        let carry_out = a < source_val;
+
+        self.registers.set_z(result as u8 == 0);
         self.registers.set_n(true);
         self.registers.set_h(half_carry);
         self.registers.set_c(carry_out);
@@ -228,6 +251,21 @@ impl Cpu {
     pub(super) fn or_a_at_hl(&mut self, bus: &mut Bus) -> u8 {
         let val = bus.read_u8(self.registers.get_hl());
         self.or_a_u8(val);
+        8
+    }
+
+    // ======================= CP =======================
+    cp_a_r!(cp_a_b, b);
+    cp_a_r!(cp_a_c, c);
+    cp_a_r!(cp_a_d, d);
+    cp_a_r!(cp_a_e, e);
+    cp_a_r!(cp_a_h, h);
+    cp_a_r!(cp_a_l, l);
+    cp_a_r!(cp_a_a, a);
+
+    pub(super) fn cp_a_at_hl(&mut self, bus: &mut Bus) -> u8 {
+        let val = bus.read_u8(self.registers.get_hl());
+        self.cp_a_u8(val);
         8
     }
 }
