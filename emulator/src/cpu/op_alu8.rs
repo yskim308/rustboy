@@ -72,8 +72,29 @@ macro_rules! cp_a_r {
     };
 }
 
+macro_rules! inc_r {
+    ($func_name: ident, $dest_r: ident) => {
+        pub(super) fn $func_name(&mut self) -> u8 {
+            self.registers.$dest_r = self.inc_val(self.registers.$dest_r);
+            4
+        }
+    };
+}
+
 impl Cpu {
     // ============= helpers =============
+    fn inc_val(&mut self, val: u8) -> u8 {
+        let result = val.wrapping_add(1);
+
+        let half_carry = (val & 0x0F) == 0x0F;
+
+        self.registers.set_z(result == 0);
+        self.registers.set_n(false);
+        self.registers.set_h(half_carry);
+
+        result
+    }
+
     fn or_a_u8(&mut self, val: u8) {
         self.registers.a |= val;
 
@@ -267,5 +288,20 @@ impl Cpu {
         let val = bus.read_u8(self.registers.get_hl());
         self.cp_a_u8(val);
         8
+    }
+
+    // ==================== INC ===================
+    inc_r!(inc_b, b);
+    inc_r!(inc_c, c);
+    inc_r!(inc_d, d);
+    inc_r!(inc_e, e);
+    inc_r!(inc_h, h);
+    inc_r!(inc_l, l);
+    inc_r!(inc_a, a);
+
+    pub(super) fn inc_at_hl(&mut self, bus: &mut Bus) -> u8 {
+        let value = bus.read_u8(self.registers.get_hl());
+        bus.write_u8(self.registers.get_hl(), self.inc_val(value));
+        12
     }
 }
