@@ -36,6 +36,15 @@ macro_rules! sbc_a_r {
     };
 }
 
+macro_rules! and_a_r {
+    ($func_name: ident, $source_r: ident) => {
+        pub(super) fn $func_name(&mut self) -> u8 {
+            self.and_a_u8(self.registers.$source_r);
+            4
+        }
+    };
+}
+
 impl Cpu {
     // ============= helpers =============
     fn add_a_u8(&mut self, val: u8, is_carry: bool) {
@@ -72,6 +81,15 @@ impl Cpu {
         self.registers.set_n(true);
         self.registers.set_h(half_carry);
         self.registers.set_c(carry_out);
+    }
+
+    fn and_a_u8(&mut self, val: u8) {
+        self.registers.a &= val;
+
+        self.registers.set_z(self.registers.a == 0);
+        self.registers.set_n(false);
+        self.registers.set_h(true);
+        self.registers.set_c(false);
     }
 
     // ============= ADD/ADC instructions ==================
@@ -129,6 +147,21 @@ impl Cpu {
     pub(super) fn sbc_a_at_hl(&mut self, bus: &mut Bus) -> u8 {
         let val_at_hl = bus.read_u8(self.registers.get_hl());
         self.sub_a_u8(val_at_hl, self.registers.get_c());
+        8
+    }
+
+    // ============ AND ============
+    and_a_r!(and_a_b, b);
+    and_a_r!(and_a_c, c);
+    and_a_r!(and_a_d, d);
+    and_a_r!(and_a_e, e);
+    and_a_r!(and_a_h, h);
+    and_a_r!(and_a_l, l);
+    and_a_r!(and_a_a, a);
+
+    pub(super) fn and_a_at_hl(&mut self, bus: &mut Bus) -> u8 {
+        let val = bus.read_u8(self.registers.get_hl());
+        self.and_a_u8(val);
         8
     }
 }
