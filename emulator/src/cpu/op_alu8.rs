@@ -45,8 +45,26 @@ macro_rules! and_a_r {
     };
 }
 
+macro_rules! xor_a_r {
+    ($func_name: ident, $source_r: ident) => {
+        pub(super) fn $func_name(&mut self) -> u8 {
+            self.xor_a_u8(self.registers.$source_r);
+            4
+        }
+    };
+}
+
 impl Cpu {
     // ============= helpers =============
+    fn xor_a_u8(&mut self, val: u8) {
+        self.registers.a ^= val;
+
+        self.registers.set_z(self.registers.a == 0);
+        self.registers.set_n(false);
+        self.registers.set_h(false);
+        self.registers.set_c(false);
+    }
+
     fn add_a_u8(&mut self, val: u8, is_carry: bool) {
         let a = self.registers.a as u16;
         let source_val = val as u16;
@@ -162,6 +180,21 @@ impl Cpu {
     pub(super) fn and_a_at_hl(&mut self, bus: &mut Bus) -> u8 {
         let val = bus.read_u8(self.registers.get_hl());
         self.and_a_u8(val);
+        8
+    }
+
+    // ========================== XOR ========================
+    xor_a_r!(xor_a_b, b);
+    xor_a_r!(xor_a_c, c);
+    xor_a_r!(xor_a_d, d);
+    xor_a_r!(xor_a_e, e);
+    xor_a_r!(xor_a_h, h);
+    xor_a_r!(xor_a_l, l);
+    xor_a_r!(xor_a_a, a);
+
+    pub(super) fn xor_a_at_hl(&mut self, bus: &mut Bus) -> u8 {
+        let val = bus.read_u8(self.registers.get_hl());
+        self.xor_a_u8(val);
         8
     }
 }
