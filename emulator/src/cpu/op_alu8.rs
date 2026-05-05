@@ -81,8 +81,28 @@ macro_rules! inc_r {
     };
 }
 
+macro_rules! dec_r {
+    ($func_name: ident, $dest_r: ident) => {
+        pub(super) fn $func_name(&mut self) -> u8 {
+            self.registers.$dest_r = self.dec_val(self.registers.$dest_r);
+            4
+        }
+    };
+}
+
 impl Cpu {
     // ============= helpers =============
+    fn dec_val(&mut self, val: u8) -> u8 {
+        let result = val.wrapping_sub(1);
+        let half_carry = (val & 0x0F) == 0x00;
+
+        self.registers.set_z(result == 0);
+        self.registers.set_n(true);
+        self.registers.set_h(half_carry);
+
+        result
+    }
+
     fn inc_val(&mut self, val: u8) -> u8 {
         let result = val.wrapping_add(1);
 
@@ -302,6 +322,21 @@ impl Cpu {
     pub(super) fn inc_at_hl(&mut self, bus: &mut Bus) -> u8 {
         let value = bus.read_u8(self.registers.get_hl());
         bus.write_u8(self.registers.get_hl(), self.inc_val(value));
+        12
+    }
+
+    // ================== DEC =============
+    dec_r!(dec_b, b);
+    dec_r!(dec_c, c);
+    dec_r!(dec_d, d);
+    dec_r!(dec_e, e);
+    dec_r!(dec_h, h);
+    dec_r!(dec_l, l);
+    dec_r!(dec_a, a);
+
+    pub(super) fn dec_at_hl(&mut self, bus: &mut Bus) -> u8 {
+        let value = bus.read_u8(self.registers.get_hl());
+        bus.write_u8(self.registers.get_hl(), self.dec_val(value));
         12
     }
 }
