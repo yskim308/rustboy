@@ -1,3 +1,4 @@
+pub mod alu16_tests;
 pub mod alu8_tests;
 pub mod jump_tests;
 pub mod mem_load_tests;
