@@ -207,6 +207,12 @@ impl Cpu {
         8
     }
 
+    pub(super) fn add_a_fetch_u8(&mut self, bus: &mut Bus) -> u8 {
+        let value = self.fetch_u8(bus);
+        self.add_a_u8(value, false);
+        8
+    }
+
     adc_a_r!(adc_a_b, b);
     adc_a_r!(adc_a_c, c);
     adc_a_r!(adc_a_d, d);
@@ -218,6 +224,12 @@ impl Cpu {
     pub(super) fn adc_a_at_hl(&mut self, bus: &mut Bus) -> u8 {
         let val_at_hl = bus.read_u8(self.registers.get_hl());
         self.add_a_u8(val_at_hl, self.registers.get_c());
+        8
+    }
+
+    pub(super) fn adc_a_fetch_u8(&mut self, bus: &mut Bus) -> u8 {
+        let value = self.fetch_u8(bus);
+        self.add_a_u8(value, self.registers.get_c());
         8
     }
 
@@ -236,6 +248,12 @@ impl Cpu {
         8
     }
 
+    pub(super) fn sub_a_fetch_u8(&mut self, bus: &mut Bus) -> u8 {
+        let val = self.fetch_u8(bus);
+        self.sub_a_u8(val, false);
+        8
+    }
+
     sbc_a_r!(sbc_a_b, b);
     sbc_a_r!(sbc_a_c, c);
     sbc_a_r!(sbc_a_d, d);
@@ -250,6 +268,12 @@ impl Cpu {
         8
     }
 
+    pub(super) fn sbc_a_fetch_u8(&mut self, bus: &mut Bus) -> u8 {
+        let val = self.fetch_u8(bus);
+        self.sub_a_u8(val, self.registers.get_c());
+        8
+    }
+
     // ============ AND ============
     and_a_r!(and_a_b, b);
     and_a_r!(and_a_c, c);
@@ -261,6 +285,12 @@ impl Cpu {
 
     pub(super) fn and_a_at_hl(&mut self, bus: &mut Bus) -> u8 {
         let val = bus.read_u8(self.registers.get_hl());
+        self.and_a_u8(val);
+        8
+    }
+
+    pub(super) fn and_a_fetch_u8(&mut self, bus: &mut Bus) -> u8 {
+        let val = self.fetch_u8(bus);
         self.and_a_u8(val);
         8
     }
@@ -280,6 +310,12 @@ impl Cpu {
         8
     }
 
+    pub(super) fn xor_a_fetch_u8(&mut self, bus: &mut Bus) -> u8 {
+        let val = self.fetch_u8(bus);
+        self.xor_a_u8(val);
+        8
+    }
+
     // ====================== OR ==========================
     or_a_r!(or_a_b, b);
     or_a_r!(or_a_c, c);
@@ -295,6 +331,12 @@ impl Cpu {
         8
     }
 
+    pub(super) fn or_a_fetch_u8(&mut self, bus: &mut Bus) -> u8 {
+        let val = self.fetch_u8(bus);
+        self.or_a_u8(val);
+        8
+    }
+
     // ======================= CP =======================
     cp_a_r!(cp_a_b, b);
     cp_a_r!(cp_a_c, c);
@@ -306,6 +348,12 @@ impl Cpu {
 
     pub(super) fn cp_a_at_hl(&mut self, bus: &mut Bus) -> u8 {
         let val = bus.read_u8(self.registers.get_hl());
+        self.cp_a_u8(val);
+        8
+    }
+
+    pub(super) fn cp_a_fetch_u8(&mut self, bus: &mut Bus) -> u8 {
+        let val = self.fetch_u8(bus);
         self.cp_a_u8(val);
         8
     }
