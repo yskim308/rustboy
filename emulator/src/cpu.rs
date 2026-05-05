@@ -3,6 +3,7 @@ use crate::{bus::Bus, cpu::register::Registers};
 #[cfg(test)]
 mod cpu_tests;
 
+mod op_alu16;
 mod op_alu8;
 mod op_jumps;
 mod op_memload;
@@ -81,42 +82,56 @@ impl Cpu {
             0x00 => 4,
             0x01 => self.ld_bc_u16(bus),
             0x02 => self.ld_at_bc_a(bus),
+            0x03 => self.inc_bc(),
             0x04 => self.inc_b(),
             0x05 => self.dec_b(),
             0x06 => self.ld_b_u8(bus),
             0x0A => self.ld_a_at_bc(bus),
+            0x0B => self.dec_bc(),
             0x0C => self.inc_c(),
             0x0D => self.dec_c(),
             0x0E => self.ld_c_u8(bus),
             0x11 => self.ld_de_u16(bus),
             0x12 => self.ld_at_de_a(bus),
+            0x13 => self.inc_de(),
             0x14 => self.inc_d(),
             0x15 => self.dec_d(),
             0x16 => self.ld_d_u8(bus),
             0x18 => self.jr_i8(bus),
             0x1A => self.ld_a_at_de(bus),
+            0x1B => self.dec_de(),
             0x1C => self.inc_e(),
             0x1D => self.dec_e(),
             0x1E => self.ld_e_u8(bus),
             0x20 => self.jr_nz_i8(bus),
             0x21 => self.ld_hl_u16(bus),
             0x22 => self.ld_at_hli_a(bus),
+            0x23 => self.inc_hl(),
             0x24 => self.inc_h(),
             0x25 => self.dec_h(),
             0x26 => self.ld_h_u8(bus),
             0x28 => self.jr_z_i8(bus),
             0x2A => self.ld_a_hli(bus),
+            0x2B => self.dec_hl(),
             0x2C => self.inc_l(),
             0x2D => self.dec_l(),
             0x2E => self.ld_l_u8(bus),
             0x30 => self.jr_nc_i8(bus),
             0x31 => self.ld_sp_u16(bus),
             0x32 => self.ld_at_hld_a(bus),
+            0x33 => {
+                self.registers.increment_sp();
+                8
+            }
             0x34 => self.inc_at_hl(bus),
             0x35 => self.dec_at_hl(bus),
             0x36 => self.ld_at_hl_u8(bus),
             0x38 => self.jr_c_i8(bus),
             0x3A => self.ld_a_at_hld(bus),
+            0x3B => {
+                self.registers.decrement_sp();
+                8
+            }
             0x3C => self.inc_a(),
             0x3D => self.dec_a(),
             0x3E => self.ld_a_u8(bus),
