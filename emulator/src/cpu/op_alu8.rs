@@ -415,6 +415,8 @@ impl Cpu {
     }
 
     pub(super) fn scf(&mut self) -> u8 {
+        self.registers.set_n(false);
+        self.registers.set_h(false);
         self.registers.set_c(true);
         4
     }
@@ -427,6 +429,9 @@ impl Cpu {
     }
 
     pub(super) fn ccf(&mut self) -> u8 {
+        self.registers.set_n(false);
+        self.registers.set_h(false);
+
         if self.registers.get_c() {
             self.registers.set_c(false);
         } else {

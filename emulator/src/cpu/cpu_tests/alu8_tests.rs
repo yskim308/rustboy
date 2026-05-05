@@ -492,4 +492,63 @@ mod tests {
         assert_eq!(cpu.registers.a, 0x10);
         assert_flags(cpu, false, true, true, false);
     });
+
+    #[test]
+    fn execute_0x27() {
+        let (mut cpu, mut bus) = setup(&[]);
+        cpu.registers.a = 0x0A;
+        cpu.registers.set_n(false);
+        cpu.registers.set_h(false);
+        cpu.registers.set_c(false);
+
+        let cycles = cpu.execute(0x27, &mut bus);
+
+        assert_eq!(cycles, 4);
+        assert_eq!(cpu.registers.a, 0x10);
+        assert_flags(&cpu, false, false, false, false);
+    }
+
+    #[test]
+    fn execute_0x2F() {
+        let (mut cpu, mut bus) = setup(&[]);
+        cpu.registers.a = 0x0F;
+        cpu.registers.set_z(true);
+        cpu.registers.set_n(false);
+        cpu.registers.set_h(false);
+        cpu.registers.set_c(true);
+
+        let cycles = cpu.execute(0x2F, &mut bus);
+
+        assert_eq!(cycles, 4);
+        assert_eq!(cpu.registers.a, 0xF0);
+        assert_flags(&cpu, true, true, true, true);
+    }
+
+    #[test]
+    fn execute_0x37() {
+        let (mut cpu, mut bus) = setup(&[]);
+        cpu.registers.set_z(true);
+        cpu.registers.set_n(true);
+        cpu.registers.set_h(true);
+        cpu.registers.set_c(false);
+
+        let cycles = cpu.execute(0x37, &mut bus);
+
+        assert_eq!(cycles, 4);
+        assert_flags(&cpu, true, false, false, true);
+    }
+
+    #[test]
+    fn execute_0x3F() {
+        let (mut cpu, mut bus) = setup(&[]);
+        cpu.registers.set_z(true);
+        cpu.registers.set_n(true);
+        cpu.registers.set_h(true);
+        cpu.registers.set_c(true);
+
+        let cycles = cpu.execute(0x3F, &mut bus);
+
+        assert_eq!(cycles, 4);
+        assert_flags(&cpu, true, false, false, false);
+    }
 }
