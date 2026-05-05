@@ -387,4 +387,52 @@ impl Cpu {
         bus.write_u8(self.registers.get_hl(), self.dec_val(value));
         12
     }
+
+    // ==================== special for A register =================
+    pub(super) fn daa(&mut self) -> u8 {
+        if !self.registers.get_n() {
+            if self.registers.a & 0x0F > 9 || self.registers.get_h() {
+                self.registers.a = self.registers.a.wrapping_add(0x06);
+            }
+
+            if self.registers.a > 0x99 || self.registers.get_c() {
+                self.registers.a = self.registers.a.wrapping_add(0x60);
+                self.registers.set_c(true);
+            }
+        } else {
+            if self.registers.get_h() {
+                self.registers.a = self.registers.a.wrapping_sub(0x06);
+            }
+
+            if self.registers.get_c() {
+                self.registers.a = self.registers.a.wrapping_sub(0x60);
+            }
+        }
+
+        self.registers.set_z(self.registers.a == 0);
+        self.registers.set_h(false);
+        4
+    }
+
+    pub(super) fn scf(&mut self) -> u8 {
+        self.registers.set_c(true);
+        4
+    }
+
+    pub(super) fn cpl(&mut self) -> u8 {
+        self.registers.a = !self.registers.a;
+        self.registers.set_n(true);
+        self.registers.set_h(true);
+        4
+    }
+
+    pub(super) fn ccf(&mut self) -> u8 {
+        if self.registers.get_c() {
+            self.registers.set_c(false);
+        } else {
+            self.registers.set_c(true);
+        }
+
+        4
+    }
 }
