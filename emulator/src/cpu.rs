@@ -8,6 +8,7 @@ mod op_alu8;
 mod op_jumps;
 mod op_memload;
 mod op_rload;
+mod op_special;
 mod op_stack;
 
 pub mod register;
@@ -15,6 +16,9 @@ pub mod register;
 pub struct Cpu {
     registers: Registers,
     ime: bool,
+    halt: bool,
+    halt_bug: bool,
+    ime_pending: bool,
     // todo: Other CPU state like interrupts
 }
 
@@ -24,6 +28,9 @@ impl Cpu {
         Self {
             registers,
             ime: false,
+            halt: false,
+            halt_bug: false,
+            ime_pending: false,
         }
     }
 
@@ -33,8 +40,20 @@ impl Cpu {
 
     pub fn step(&mut self, bus: &mut Bus) -> u8 {
         let read_byte = bus.read_u8(self.registers.pc);
-        self.advance_pc();
-        self.execute(read_byte, bus)
+        if self.halt_bug {
+            self.halt_bug = false;
+        } else {
+            self.advance_pc();
+        }
+
+        let cycles = self.execute(read_byte, bus);
+
+        if self.ime_pending {
+            self.ime_pending = false;
+            self.ime = true;
+        }
+
+        cycles
     }
 
     fn fetch_u8(&mut self, bus: &mut Bus) -> u8 {
@@ -79,7 +98,7 @@ impl Cpu {
         // https://izik1.github.io/gbops/
         // every opcode is developed through TDD, see cpu/tests
         match opcode {
-            0x00 => 4,
+            0x00 => self.nop(),
             0x01 => self.ld_bc_u16(bus),
             0x02 => self.ld_at_bc_a(bus),
             0x03 => self.inc_bc(),
@@ -92,6 +111,7 @@ impl Cpu {
             0x0C => self.inc_c(),
             0x0D => self.dec_c(),
             0x0E => self.ld_c_u8(bus),
+            0x10 => self.stop(bus),
             0x11 => self.ld_de_u16(bus),
             0x12 => self.ld_at_de_a(bus),
             0x13 => self.inc_de(),
@@ -197,6 +217,7 @@ impl Cpu {
             0x73 => self.ld_at_hl_e(bus),
             0x74 => self.ld_at_hl_h(bus),
             0x75 => self.ld_at_hl_l(bus),
+            0x76 => self.halt(bus),
             0x77 => self.ld_at_hl_a(bus),
             0x78 => self.ld_a_b(),
             0x79 => self.ld_a_c(),
@@ -281,6 +302,7 @@ impl Cpu {
             0xC8 => self.ret_z(bus),
             0xC9 => self.ret(bus),
             0xCA => self.jp_z_u16(bus),
+            0xCB => self.execute_cb(bus),
             0xCC => self.call_z_u16(bus),
             0xCD => self.call_u16(bus),
             0xCE => self.adc_a_fetch_u8(bus),
@@ -312,16 +334,29 @@ impl Cpu {
             0xF0 => self.ldh_a_at_u8(bus),
             0xF1 => self.pop_af(bus),
             0xF2 => self.ldh_a_at_c(bus),
+            0xF3 => self.di(),
             0xF5 => self.push_af(bus),
             0xF6 => self.or_a_fetch_u8(bus),
             0xF7 => self.rst(bus, 0x30),
             0xF8 => self.ld_hl_sp_i8(bus),
             0xF9 => self.ld_sp_hl(),
             0xFA => self.ld_a_at_u16(bus),
+            0xFB => self.ei(),
             0xFE => self.cp_a_fetch_u8(bus),
             0xFF => self.rst(bus, 0x38),
             _ => panic!(
                 "Unimplemented opcode: {:#04X} at pc {:#06X}",
+                opcode, self.registers.pc
+            ),
+        }
+    }
+
+    pub fn execute_cb(&mut self, bus: &mut Bus) -> u8 {
+        let cycles = 4; // default four for first fetch
+        let opcode = self.fetch_u8(bus);
+        match opcode {
+            _ => panic!(
+                "Unimplemented CB prefix opcode: {:#04X} at pc {:#06X}",
                 opcode, self.registers.pc
             ),
         }
