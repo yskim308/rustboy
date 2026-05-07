@@ -391,6 +391,14 @@ impl Cpu {
             0x1D => self.rr_l(),
             0x1E => self.rr_hl(bus),
             0x1F => self.rr_a(),
+            0x20 => self.sla_b(),
+            0x21 => self.sla_c(),
+            0x22 => self.sla_d(),
+            0x23 => self.sla_e(),
+            0x24 => self.sla_h(),
+            0x25 => self.sla_l(),
+            0x26 => self.sla_hl(bus),
+            0x27 => self.sla_a(),
             _ => panic!(
                 "Unimplemented CB prefix opcode: {:#04X} at pc {:#06X}",
                 opcode, self.registers.pc
