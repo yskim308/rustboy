@@ -1,5 +1,3 @@
-use std::ptr::addr_of;
-
 use crate::{bus::Bus, cpu::Cpu};
 
 macro_rules! rlc_r {
@@ -59,6 +57,12 @@ impl Cpu {
     }
 
     rr_r!(rr_b, b);
+    rr_r!(rr_c, c);
+    rr_r!(rr_d, d);
+    rr_r!(rr_e, e);
+    rr_r!(rr_h, h);
+    rr_r!(rr_l, l);
+    rr_r!(rr_a, a);
 
     pub(super) fn rr_hl(&mut self, bus: &mut Bus) -> u8 {
         let address = self.registers.get_hl();
@@ -77,6 +81,12 @@ impl Cpu {
     }
 
     rl_r!(rl_b, b);
+    rl_r!(rl_c, c);
+    rl_r!(rl_d, d);
+    rl_r!(rl_e, e);
+    rl_r!(rl_h, h);
+    rl_r!(rl_l, l);
+    rl_r!(rl_a, a);
 
     pub(super) fn rl_hl(&mut self, bus: &mut Bus) -> u8 {
         let address = self.registers.get_hl();
@@ -94,10 +104,16 @@ impl Cpu {
     }
 
     rrc_r!(rrc_b, b);
+    rrc_r!(rrc_c, c);
+    rrc_r!(rrc_d, d);
+    rrc_r!(rrc_e, e);
+    rrc_r!(rrc_h, h);
+    rrc_r!(rrc_l, l);
+    rrc_r!(rrc_a, a);
 
     pub(super) fn rrc_hl(&mut self, bus: &mut Bus) -> u8 {
         let address = self.registers.get_hl();
-        let (shifted, carry) = self.rlc_u8(bus.read_u8(address));
+        let (shifted, carry) = self.rrc_u8(bus.read_u8(address));
         bus.write_u8(address, shifted);
         self.set_znhc(shifted == 0, false, false, carry);
         16
@@ -111,6 +127,12 @@ impl Cpu {
     }
 
     rlc_r!(rlc_b, b);
+    rlc_r!(rlc_c, c);
+    rlc_r!(rlc_d, d);
+    rlc_r!(rlc_e, e);
+    rlc_r!(rlc_h, h);
+    rlc_r!(rlc_l, l);
+    rlc_r!(rlc_a, a);
 
     pub(super) fn rlc_hl(&mut self, bus: &mut Bus) -> u8 {
         let address = self.registers.get_hl();
