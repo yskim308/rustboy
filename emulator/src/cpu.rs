@@ -8,6 +8,7 @@ mod op_alu8;
 mod op_jumps;
 mod op_memload;
 mod op_rload;
+mod op_rsb;
 mod op_special;
 mod op_stack;
 
@@ -105,12 +106,14 @@ impl Cpu {
             0x04 => self.inc_b(),
             0x05 => self.dec_b(),
             0x06 => self.ld_b_u8(bus),
+            0x07 => self.rlca(),
             0x09 => self.add_hl_bc(),
             0x0A => self.ld_a_at_bc(bus),
             0x0B => self.dec_bc(),
             0x0C => self.inc_c(),
             0x0D => self.dec_c(),
             0x0E => self.ld_c_u8(bus),
+            0x0F => self.rrca(),
             0x10 => self.stop(bus),
             0x11 => self.ld_de_u16(bus),
             0x12 => self.ld_at_de_a(bus),
@@ -118,6 +121,7 @@ impl Cpu {
             0x14 => self.inc_d(),
             0x15 => self.dec_d(),
             0x16 => self.ld_d_u8(bus),
+            0x17 => self.rla(),
             0x18 => self.jr_i8(bus),
             0x19 => self.add_hl_de(),
             0x1A => self.ld_a_at_de(bus),
@@ -125,6 +129,7 @@ impl Cpu {
             0x1C => self.inc_e(),
             0x1D => self.dec_e(),
             0x1E => self.ld_e_u8(bus),
+            0x1F => self.rra(),
             0x20 => self.jr_nz_i8(bus),
             0x21 => self.ld_hl_u16(bus),
             0x22 => self.ld_at_hli_a(bus),
