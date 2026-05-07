@@ -91,7 +91,108 @@ macro_rules! srl_r {
     };
 }
 
+macro_rules! bit_r {
+    ($func_name: ident, $reg: ident, $bit: expr) => {
+        pub(super) fn $func_name(&mut self) -> u8 {
+            self.bit_u8($bit, self.registers.$reg);
+            8
+        }
+    };
+}
+
+macro_rules! bit_hl {
+    ($func_name: ident, $bit: expr) => {
+        pub(super) fn $func_name(&mut self, bus: &mut Bus) -> u8 {
+            self.bit_at_hl(bus, $bit)
+        }
+    };
+}
+
 impl Cpu {
+    // ============= BIT ============
+    fn bit_u8(&mut self, bit: u8, val: u8) {
+        let is_zero = (val >> bit) & 1 == 0;
+        self.set_znhc(is_zero, false, true, self.registers.get_c());
+    }
+
+    fn bit_at_hl(&mut self, bus: &mut Bus, bit: u8) -> u8 {
+        let value = bus.read_u8(self.registers.get_hl());
+        self.bit_u8(bit, value);
+        12
+    }
+
+    bit_r!(bit_0_b, b, 0);
+    bit_r!(bit_0_c, c, 0);
+    bit_r!(bit_0_d, d, 0);
+    bit_r!(bit_0_e, e, 0);
+    bit_r!(bit_0_h, h, 0);
+    bit_r!(bit_0_l, l, 0);
+    bit_hl!(bit_0_hl, 0);
+    bit_r!(bit_0_a, a, 0);
+
+    bit_r!(bit_1_b, b, 1);
+    bit_r!(bit_1_c, c, 1);
+    bit_r!(bit_1_d, d, 1);
+    bit_r!(bit_1_e, e, 1);
+    bit_r!(bit_1_h, h, 1);
+    bit_r!(bit_1_l, l, 1);
+    bit_hl!(bit_1_hl, 1);
+    bit_r!(bit_1_a, a, 1);
+
+    bit_r!(bit_2_b, b, 2);
+    bit_r!(bit_2_c, c, 2);
+    bit_r!(bit_2_d, d, 2);
+    bit_r!(bit_2_e, e, 2);
+    bit_r!(bit_2_h, h, 2);
+    bit_r!(bit_2_l, l, 2);
+    bit_hl!(bit_2_hl, 2);
+    bit_r!(bit_2_a, a, 2);
+
+    bit_r!(bit_3_b, b, 3);
+    bit_r!(bit_3_c, c, 3);
+    bit_r!(bit_3_d, d, 3);
+    bit_r!(bit_3_e, e, 3);
+    bit_r!(bit_3_h, h, 3);
+    bit_r!(bit_3_l, l, 3);
+    bit_hl!(bit_3_hl, 3);
+    bit_r!(bit_3_a, a, 3);
+
+    bit_r!(bit_4_b, b, 4);
+    bit_r!(bit_4_c, c, 4);
+    bit_r!(bit_4_d, d, 4);
+    bit_r!(bit_4_e, e, 4);
+    bit_r!(bit_4_h, h, 4);
+    bit_r!(bit_4_l, l, 4);
+    bit_hl!(bit_4_hl, 4);
+    bit_r!(bit_4_a, a, 4);
+
+    bit_r!(bit_5_b, b, 5);
+    bit_r!(bit_5_c, c, 5);
+    bit_r!(bit_5_d, d, 5);
+    bit_r!(bit_5_e, e, 5);
+    bit_r!(bit_5_h, h, 5);
+    bit_r!(bit_5_l, l, 5);
+    bit_hl!(bit_5_hl, 5);
+    bit_r!(bit_5_a, a, 5);
+
+    bit_r!(bit_6_b, b, 6);
+    bit_r!(bit_6_c, c, 6);
+    bit_r!(bit_6_d, d, 6);
+    bit_r!(bit_6_e, e, 6);
+    bit_r!(bit_6_h, h, 6);
+    bit_r!(bit_6_l, l, 6);
+    bit_hl!(bit_6_hl, 6);
+    bit_r!(bit_6_a, a, 6);
+
+    bit_r!(bit_7_b, b, 7);
+    bit_r!(bit_7_c, c, 7);
+    bit_r!(bit_7_d, d, 7);
+    bit_r!(bit_7_e, e, 7);
+    bit_r!(bit_7_h, h, 7);
+    bit_r!(bit_7_l, l, 7);
+    bit_hl!(bit_7_hl, 7);
+    bit_r!(bit_7_a, a, 7);
+
     // ============ SRL =============
     fn srl_u8(&self, mut val: u8) -> (u8, bool) {
         let lsb = val & 1;
