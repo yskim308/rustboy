@@ -58,7 +58,43 @@ macro_rules! sla_r {
     };
 }
 
+macro_rules! sra_r {
+    ($func_name: ident, $reg: ident) => {
+        pub(super) fn $func_name(&mut self) -> u8 {
+            let (shifted, carry) = self.sra_u8(self.registers.$reg);
+            self.registers.$reg = shifted;
+            self.set_znhc(shifted == 0, false, false, carry);
+            8
+        }
+    };
+}
+
 impl Cpu {
+    // ============ SRA =========
+    fn sra_u8(&self, mut val: u8) -> (u8, bool) {
+        let msb = (val >> 7) & 1;
+        let lsb = val & 1;
+        val >>= 1;
+        val |= msb << 7;
+        (val, lsb == 1)
+    }
+
+    sra_r!(sra_b, b);
+    sra_r!(sra_c, c);
+    sra_r!(sra_d, d);
+    sra_r!(sra_e, e);
+    sra_r!(sra_h, h);
+    sra_r!(sra_l, l);
+    sra_r!(sra_a, a);
+
+    pub(super) fn sra_hl(&mut self, bus: &mut Bus) -> u8 {
+        let address = self.registers.get_hl();
+        let (shifted, carry) = self.sra_u8(bus.read_u8(address));
+        bus.write_u8(address, shifted);
+        self.set_znhc(shifted == 0, false, false, carry);
+        16
+    }
+
     // =========== SLA ==========
     fn sla_u8(&self, mut val: u8) -> (u8, bool) {
         let msb = (val >> 7) & 1;
