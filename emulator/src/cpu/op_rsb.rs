@@ -80,7 +80,41 @@ macro_rules! swap_r {
     };
 }
 
+macro_rules! srl_r {
+    ($func_name: ident, $reg: ident) => {
+        pub(super) fn $func_name(&mut self) -> u8 {
+            let (shifted, carry) = self.srl_u8(self.registers.$reg);
+            self.registers.$reg = shifted;
+            self.set_znhc(shifted == 0, false, false, carry);
+            8
+        }
+    };
+}
+
 impl Cpu {
+    // ============ SRL =============
+    fn srl_u8(&self, mut val: u8) -> (u8, bool) {
+        let lsb = val & 1;
+        val >>= 1;
+        (val, lsb == 1)
+    }
+
+    srl_r!(srl_b, b);
+    srl_r!(srl_c, c);
+    srl_r!(srl_d, d);
+    srl_r!(srl_e, e);
+    srl_r!(srl_h, h);
+    srl_r!(srl_l, l);
+    srl_r!(srl_a, a);
+
+    pub(super) fn srl_hl(&mut self, bus: &mut Bus) -> u8 {
+        let address = self.registers.get_hl();
+        let (shifted, carry) = self.srl_u8(bus.read_u8(address));
+        bus.write_u8(address, shifted);
+        self.set_znhc(shifted == 0, false, false, carry);
+        16
+    }
+
     // =========== SWAP ==========
     fn swap_u8(&self, mut val: u8) -> u8 {
         val = (val << 4) | (val >> 4);
