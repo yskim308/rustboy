@@ -357,9 +357,9 @@ impl Cpu {
     }
 
     pub fn execute_cb(&mut self, bus: &mut Bus) -> u8 {
-        let cycles = 4; // default four for first fetch
         let opcode = self.fetch_u8(bus);
         match opcode {
+            0x00 => self.rlc_b(),
             _ => panic!(
                 "Unimplemented CB prefix opcode: {:#04X} at pc {:#06X}",
                 opcode, self.registers.pc
