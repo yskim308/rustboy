@@ -125,16 +125,119 @@ macro_rules! res_hl {
     };
 }
 
+macro_rules! set_r {
+    ($func_name: ident, $reg: ident, $bit: expr) => {
+        pub(super) fn $func_name(&mut self) -> u8 {
+            self.registers.$reg = self.set_u8($bit, self.registers.$reg);
+            8
+        }
+    };
+}
+
+macro_rules! set_hl {
+    ($func_name: ident, $bit: expr) => {
+        pub(super) fn $func_name(&mut self, bus: &mut Bus) -> u8 {
+            self.set_at_hl(bus, $bit)
+        }
+    };
+}
+
 impl Cpu {
+    // ============= SET =================
+    fn set_u8(&self, set_bit: u8, val: u8) -> u8 {
+        val | (1 << set_bit)
+    }
+
+    fn set_at_hl(&mut self, bus: &mut Bus, set_bit: u8) -> u8 {
+        let address = self.registers.get_hl();
+        let value = bus.read_u8(address);
+        let set_val = self.set_u8(set_bit, value);
+        bus.write_u8(address, set_val);
+        16
+    }
+
+    set_r!(set_0_b, b, 0);
+    set_r!(set_0_c, c, 0);
+    set_r!(set_0_d, d, 0);
+    set_r!(set_0_e, e, 0);
+    set_r!(set_0_h, h, 0);
+    set_r!(set_0_l, l, 0);
+    set_hl!(set_0_hl, 0);
+    set_r!(set_0_a, a, 0);
+
+    set_r!(set_1_b, b, 1);
+    set_r!(set_1_c, c, 1);
+    set_r!(set_1_d, d, 1);
+    set_r!(set_1_e, e, 1);
+    set_r!(set_1_h, h, 1);
+    set_r!(set_1_l, l, 1);
+    set_hl!(set_1_hl, 1);
+    set_r!(set_1_a, a, 1);
+
+    set_r!(set_2_b, b, 2);
+    set_r!(set_2_c, c, 2);
+    set_r!(set_2_d, d, 2);
+    set_r!(set_2_e, e, 2);
+    set_r!(set_2_h, h, 2);
+    set_r!(set_2_l, l, 2);
+    set_hl!(set_2_hl, 2);
+    set_r!(set_2_a, a, 2);
+
+    set_r!(set_3_b, b, 3);
+    set_r!(set_3_c, c, 3);
+    set_r!(set_3_d, d, 3);
+    set_r!(set_3_e, e, 3);
+    set_r!(set_3_h, h, 3);
+    set_r!(set_3_l, l, 3);
+    set_hl!(set_3_hl, 3);
+    set_r!(set_3_a, a, 3);
+
+    set_r!(set_4_b, b, 4);
+    set_r!(set_4_c, c, 4);
+    set_r!(set_4_d, d, 4);
+    set_r!(set_4_e, e, 4);
+    set_r!(set_4_h, h, 4);
+    set_r!(set_4_l, l, 4);
+    set_hl!(set_4_hl, 4);
+    set_r!(set_4_a, a, 4);
+
+    set_r!(set_5_b, b, 5);
+    set_r!(set_5_c, c, 5);
+    set_r!(set_5_d, d, 5);
+    set_r!(set_5_e, e, 5);
+    set_r!(set_5_h, h, 5);
+    set_r!(set_5_l, l, 5);
+    set_hl!(set_5_hl, 5);
+    set_r!(set_5_a, a, 5);
+
+    set_r!(set_6_b, b, 6);
+    set_r!(set_6_c, c, 6);
+    set_r!(set_6_d, d, 6);
+    set_r!(set_6_e, e, 6);
+    set_r!(set_6_h, h, 6);
+    set_r!(set_6_l, l, 6);
+    set_hl!(set_6_hl, 6);
+    set_r!(set_6_a, a, 6);
+
+    set_r!(set_7_b, b, 7);
+    set_r!(set_7_c, c, 7);
+    set_r!(set_7_d, d, 7);
+    set_r!(set_7_e, e, 7);
+    set_r!(set_7_h, h, 7);
+    set_r!(set_7_l, l, 7);
+    set_hl!(set_7_hl, 7);
+    set_r!(set_7_a, a, 7);
+
     // ============= RES ==============
     fn res_u8(&self, res_bit: u8, val: u8) -> u8 {
         val & !(1 << res_bit)
     }
 
     fn res_at_hl(&mut self, bus: &mut Bus, res_bit: u8) -> u8 {
-        let value = bus.read_u8(self.registers.get_hl());
+        let address = self.registers.get_hl();
+        let value = bus.read_u8(address);
         let res_val = self.res_u8(res_bit, value);
-        bus.write_u8(self.registers.get_hl(), res_val);
+        bus.write_u8(address, res_val);
         16
     }
 
