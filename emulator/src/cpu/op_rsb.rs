@@ -108,7 +108,108 @@ macro_rules! bit_hl {
     };
 }
 
+macro_rules! res_r {
+    ($func_name: ident, $reg: ident, $bit: expr) => {
+        pub(super) fn $func_name(&mut self) -> u8 {
+            self.registers.$reg = self.res_u8($bit, self.registers.$reg);
+            8
+        }
+    };
+}
+
+macro_rules! res_hl {
+    ($func_name: ident, $bit: expr) => {
+        pub(super) fn $func_name(&mut self, bus: &mut Bus) -> u8 {
+            self.res_at_hl(bus, $bit)
+        }
+    };
+}
+
 impl Cpu {
+    // ============= RES ==============
+    fn res_u8(&self, res_bit: u8, val: u8) -> u8 {
+        val & !(1 << res_bit)
+    }
+
+    fn res_at_hl(&mut self, bus: &mut Bus, res_bit: u8) -> u8 {
+        let value = bus.read_u8(self.registers.get_hl());
+        let res_val = self.res_u8(res_bit, value);
+        bus.write_u8(self.registers.get_hl(), res_val);
+        16
+    }
+
+    res_r!(res_0_b, b, 0);
+    res_r!(res_0_c, c, 0);
+    res_r!(res_0_d, d, 0);
+    res_r!(res_0_e, e, 0);
+    res_r!(res_0_h, h, 0);
+    res_r!(res_0_l, l, 0);
+    res_hl!(res_0_hl, 0);
+    res_r!(res_0_a, a, 0);
+
+    res_r!(res_1_b, b, 1);
+    res_r!(res_1_c, c, 1);
+    res_r!(res_1_d, d, 1);
+    res_r!(res_1_e, e, 1);
+    res_r!(res_1_h, h, 1);
+    res_r!(res_1_l, l, 1);
+    res_hl!(res_1_hl, 1);
+    res_r!(res_1_a, a, 1);
+
+    res_r!(res_2_b, b, 2);
+    res_r!(res_2_c, c, 2);
+    res_r!(res_2_d, d, 2);
+    res_r!(res_2_e, e, 2);
+    res_r!(res_2_h, h, 2);
+    res_r!(res_2_l, l, 2);
+    res_hl!(res_2_hl, 2);
+    res_r!(res_2_a, a, 2);
+
+    res_r!(res_3_b, b, 3);
+    res_r!(res_3_c, c, 3);
+    res_r!(res_3_d, d, 3);
+    res_r!(res_3_e, e, 3);
+    res_r!(res_3_h, h, 3);
+    res_r!(res_3_l, l, 3);
+    res_hl!(res_3_hl, 3);
+    res_r!(res_3_a, a, 3);
+
+    res_r!(res_4_b, b, 4);
+    res_r!(res_4_c, c, 4);
+    res_r!(res_4_d, d, 4);
+    res_r!(res_4_e, e, 4);
+    res_r!(res_4_h, h, 4);
+    res_r!(res_4_l, l, 4);
+    res_hl!(res_4_hl, 4);
+    res_r!(res_4_a, a, 4);
+
+    res_r!(res_5_b, b, 5);
+    res_r!(res_5_c, c, 5);
+    res_r!(res_5_d, d, 5);
+    res_r!(res_5_e, e, 5);
+    res_r!(res_5_h, h, 5);
+    res_r!(res_5_l, l, 5);
+    res_hl!(res_5_hl, 5);
+    res_r!(res_5_a, a, 5);
+
+    res_r!(res_6_b, b, 6);
+    res_r!(res_6_c, c, 6);
+    res_r!(res_6_d, d, 6);
+    res_r!(res_6_e, e, 6);
+    res_r!(res_6_h, h, 6);
+    res_r!(res_6_l, l, 6);
+    res_hl!(res_6_hl, 6);
+    res_r!(res_6_a, a, 6);
+
+    res_r!(res_7_b, b, 7);
+    res_r!(res_7_c, c, 7);
+    res_r!(res_7_d, d, 7);
+    res_r!(res_7_e, e, 7);
+    res_r!(res_7_h, h, 7);
+    res_r!(res_7_l, l, 7);
+    res_hl!(res_7_hl, 7);
+    res_r!(res_7_a, a, 7);
+
     // ============= BIT ============
     fn bit_u8(&mut self, bit: u8, val: u8) {
         let is_zero = (val >> bit) & 1 == 0;
