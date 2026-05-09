@@ -46,6 +46,10 @@ impl Cpu {
             return interrupt_cycles;
         }
 
+        if self.halt {
+            return 4;
+        }
+
         let read_byte = bus.read_u8(self.registers.pc);
         if self.halt_bug {
             self.halt_bug = false;
