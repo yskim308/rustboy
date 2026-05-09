@@ -104,4 +104,12 @@ impl Cpu {
     dec_r!(dec_bc, get_bc, set_bc);
     dec_r!(dec_de, get_de, set_de);
     dec_r!(dec_hl, get_hl, set_hl);
+
+    pub(super) fn ld_at_u16_sp(&mut self, bus: &mut Bus) -> u8 {
+        let address = self.fetch_u16(bus);
+        let [low, high] = self.registers.sp.to_le_bytes();
+        bus.write_u8(address, low);
+        bus.write_u8(address.wrapping_add(1), high);
+        20
+    }
 }

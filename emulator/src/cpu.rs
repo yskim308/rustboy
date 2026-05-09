@@ -107,6 +107,7 @@ impl Cpu {
             0x05 => self.dec_b(),
             0x06 => self.ld_b_u8(bus),
             0x07 => self.rlca(),
+            0x08 => self.ld_at_u16_sp(bus),
             0x09 => self.add_hl_bc(),
             0x0A => self.ld_a_at_bc(bus),
             0x0B => self.dec_bc(),

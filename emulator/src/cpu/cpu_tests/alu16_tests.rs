@@ -97,6 +97,25 @@ mod tests {
 
     test_add_hl_rr!(execute_0x09, 0x09, |cpu: &mut Cpu| cpu.registers.set_bc(0x0001));
     test_add_hl_rr!(execute_0x19, 0x19, |cpu: &mut Cpu| cpu.registers.set_de(0x0001));
+
+    #[test]
+    fn execute_0x08() {
+        let (mut cpu, mut bus) = setup(&[0x34, 0x12]);
+        cpu.registers.sp = 0xABCD;
+        cpu.registers.set_z(true);
+        cpu.registers.set_n(true);
+        cpu.registers.set_h(true);
+        cpu.registers.set_c(true);
+
+        let cycles = cpu.execute(0x08, &mut bus);
+
+        assert_eq!(cycles, 20);
+        assert_eq!(bus.read_u8(0x1234), 0xCD);
+        assert_eq!(bus.read_u8(0x1235), 0xAB);
+        assert_eq!(cpu.registers.sp, 0xABCD);
+        assert_flags(&cpu, true, true, true, true);
+    }
+
     #[test]
     fn execute_0x39() {
         let (mut cpu, mut bus) = setup(&[]);
