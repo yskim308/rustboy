@@ -390,27 +390,34 @@ impl Cpu {
 
     // ==================== special for A register =================
     pub(super) fn daa(&mut self) -> u8 {
-        if !self.registers.get_n() {
-            if self.registers.a & 0x0F > 9 || self.registers.get_h() {
-                self.registers.a = self.registers.a.wrapping_add(0x06);
-            }
+        let mut a = self.registers.a;
+        let mut adjust = 0;
+        let mut carry = self.registers.get_c();
 
-            if self.registers.a > 0x99 || self.registers.get_c() {
-                self.registers.a = self.registers.a.wrapping_add(0x60);
-                self.registers.set_c(true);
+        if !self.registers.get_n() {
+            if self.registers.get_h() || (a & 0x0F) > 0x09 {
+                adjust |= 0x06;
             }
+            if self.registers.get_c() || a > 0x99 {
+                adjust |= 0x60;
+                carry = true;
+            }
+            a = a.wrapping_add(adjust);
         } else {
             if self.registers.get_h() {
-                self.registers.a = self.registers.a.wrapping_sub(0x06);
+                adjust |= 0x06;
             }
-
             if self.registers.get_c() {
-                self.registers.a = self.registers.a.wrapping_sub(0x60);
+                adjust |= 0x60;
             }
+            a = a.wrapping_sub(adjust);
         }
 
-        self.registers.set_z(self.registers.a == 0);
-        self.registers.set_h(false);
+        self.registers.a = a;
+        self.registers.set_c(carry);
+        self.registers.set_z(a == 0);
+        self.registers.set_h(false); // H is always cleared
+
         4
     }
 
