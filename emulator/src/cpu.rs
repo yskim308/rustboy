@@ -12,6 +12,7 @@ mod op_rsb;
 mod op_special;
 mod op_stack;
 
+mod interrupt;
 pub mod register;
 
 pub struct Cpu {
@@ -40,6 +41,11 @@ impl Cpu {
     }
 
     pub fn step(&mut self, bus: &mut Bus) -> u8 {
+        let interrupt_cycles = self.handle_interrupts(bus);
+        if interrupt_cycles != 0 {
+            return interrupt_cycles;
+        }
+
         let read_byte = bus.read_u8(self.registers.pc);
         if self.halt_bug {
             self.halt_bug = false;
