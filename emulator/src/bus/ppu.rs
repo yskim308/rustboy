@@ -1,3 +1,4 @@
+#[derive(PartialEq)]
 enum PpuState {
     OamSearch,
     PixelTransfer,
@@ -5,21 +6,81 @@ enum PpuState {
     VBlank,
 }
 
+struct Sprite {
+    x: u8,
+    y: u8,
+    tile_index: u8,
+    flag: u8,
+}
+
 pub(super) struct Ppu {
     ly: u8,
     scx: u8,
     scy: u8,
-    cycle: u64,
+    cycle: u16,
     state: PpuState,
 
     vram: [u8; 8192],
     oam: [u8; 160],
+
+    oam_searched: bool,
+    saved_sprites: Vec<Sprite>,
 }
 
 impl Ppu {
     pub fn step(&mut self, cycles: u8) {
-        self.cycle += cycles as u64;
-        todo!("handling PPU state machine")
+        self.cycle += cycles as u16;
+        match self.state {
+            PpuState::OamSearch => self.search_oam(),
+            PpuState::PixelTransfer => todo!(),
+            PpuState::HBlank => todo!(),
+            PpuState::VBlank => todo!(),
+        }
+    }
+
+    fn search_oam(&mut self) {
+        if self.state != PpuState::OamSearch {
+            panic!("Trying to search OAM when PPU State is not OamSearch");
+        }
+
+        if !self.oam_searched {
+            self.save_sprites();
+        }
+
+        if self.cycle > 20 {
+            self.state = PpuState::PixelTransfer;
+            self.cycle = self.cycle % 20;
+            self.oam_searched = false;
+        }
+    }
+
+    fn save_sprites(&mut self) {
+        self.saved_sprites.clear();
+        let sprite_height = 8; // todo: get from register instead of hardcoding
+
+        for i in 0..40 {
+            if self.saved_sprites.len() >= 10 {
+                break;
+            }
+            let base = i * 4;
+            let y = self.oam[base];
+            let x = self.oam[base + 1];
+            let tile_index = self.oam[base + 2];
+            let flag = self.oam[base + 3];
+
+            let ly_offset = self.ly as u16 + 16;
+            let is_overlapping = y as u16 <= ly_offset && ly_offset <= y as u16 + sprite_height;
+
+            if is_overlapping {
+                self.saved_sprites.push(Sprite {
+                    x,
+                    y,
+                    tile_index,
+                    flag,
+                });
+            }
+        }
+        self.oam_searched = true;
     }
 
     pub fn read_u8(&mut self, address: u16) -> u8 {
@@ -49,6 +110,8 @@ impl Default for Ppu {
             state: PpuState::OamSearch,
             vram: [0; 8192],
             oam: [0; 160],
+            oam_searched: false,
+            saved_sprites: Vec::with_capacity(10),
         }
     }
 }
