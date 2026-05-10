@@ -15,12 +15,19 @@ struct Sprite {
     flag: u8,
 }
 
+#[derive(Default)]
+pub struct PpuRegisters {
+    pub lcdc: u8,
+    pub scx: u8,
+    pub scy: u8,
+    pub bgp: u8,
+}
+
 pub(super) struct Ppu {
     ly: u8,
-    scx: u8,
-    scy: u8,
     cycle: u16,
     state: PpuState,
+    registers: PpuRegisters,
 
     vram: [u8; 8192],
     oam: [u8; 160],
@@ -30,10 +37,11 @@ pub(super) struct Ppu {
 }
 
 impl Ppu {
-    pub fn step(&mut self, cycles: u8, lcdc: u8) {
+    pub fn step(&mut self, cycles: u8, ppu_registers: PpuRegisters) {
         self.cycle += cycles as u16;
+        self.registers = ppu_registers;
         match self.state {
-            PpuState::OamSearch => self.search_oam(lcdc),
+            PpuState::OamSearch => self.search_oam(self.registers.lcdc),
             PpuState::PixelTransfer => todo!(),
             PpuState::HBlank => todo!(),
             PpuState::VBlank => todo!(),
@@ -108,14 +116,13 @@ impl Default for Ppu {
     fn default() -> Self {
         Ppu {
             ly: 0,
-            scx: 0,
-            scy: 0,
             cycle: 0,
             state: PpuState::OamSearch,
             vram: [0; 8192],
             oam: [0; 160],
             oam_searched: false,
             saved_sprites: Vec::with_capacity(10),
+            registers: PpuRegisters::default(),
         }
     }
 }

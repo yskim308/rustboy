@@ -1,6 +1,11 @@
 use std::panic;
 
-use crate::bus::{cartridge::Cartridge, ppu::Ppu, serial::Serial, wram::Wram};
+use crate::bus::{
+    cartridge::Cartridge,
+    ppu::{Ppu, PpuRegisters},
+    serial::Serial,
+    wram::Wram,
+};
 
 pub mod cartridge;
 mod ppu;
@@ -26,8 +31,13 @@ pub struct Bus {
 
 impl Bus {
     pub fn synchronize(&mut self, cycles: u8) {
-        let lcdc = self.read_u8(0xFF40);
-        self.ppu.step(cycles, lcdc);
+        let ppu_registers = PpuRegisters {
+            lcdc: self.read_u8(0xFF40),
+            scx: self.read_u8(0xFF42),
+            scy: self.read_u8(0xFF43),
+            bgp: self.read_u8(0xFF47),
+        };
+        self.ppu.step(cycles, ppu_registers);
     }
 
     pub fn new(cartridge: Cartridge) -> Self {
