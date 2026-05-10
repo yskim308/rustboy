@@ -14,10 +14,8 @@ pub mod wram;
 
 pub struct Bus {
     cartridge: Cartridge, // 0000 - 7FFF
-    vram: [u8; 8192],     // 8000 - 9FFF
     eram: [u8; 8192],     // A000 - BFFF
     wram: Wram,           // C000 - DFFF + E000 - FDFF (echo ram)
-    oam: [u8; 160],       // FE00 - FE9F
 
     // IO: FF00 - FF7F
     serial: Serial,       // FF01 - FF02
@@ -43,10 +41,8 @@ impl Bus {
     pub fn new(cartridge: Cartridge) -> Self {
         Self {
             cartridge,
-            vram: [0; 8192],
             eram: [0; 8192],
             wram: Wram::new(),
-            oam: [0; 160],
             serial: Serial::new(),
             io_bucket: [0; 128],
             hram: [0; 127],
