@@ -10,11 +10,8 @@ impl Gameboy {
         Self { bus, cpu }
     }
 
-    pub fn step_frame(&mut self) -> u8 {
-        self.cpu.step(&mut self.bus)
-    }
-
-    pub fn synchronize(&mut self) {
-        todo!("Implemnt synch with other components")
+    pub fn step_frame(&mut self) {
+        let cycles = self.cpu.step(&mut self.bus);
+        self.bus.synchronize(cycles);
     }
 }
