@@ -1,3 +1,5 @@
+use crate::bus::Bus;
+
 #[derive(PartialEq)]
 enum PpuState {
     OamSearch,
@@ -28,23 +30,25 @@ pub(super) struct Ppu {
 }
 
 impl Ppu {
-    pub fn step(&mut self, cycles: u8) {
+    pub fn step(&mut self, cycles: u8, lcdc: u8) {
         self.cycle += cycles as u16;
         match self.state {
-            PpuState::OamSearch => self.search_oam(),
+            PpuState::OamSearch => self.search_oam(lcdc),
             PpuState::PixelTransfer => todo!(),
             PpuState::HBlank => todo!(),
             PpuState::VBlank => todo!(),
         }
     }
 
-    fn search_oam(&mut self) {
+    fn search_oam(&mut self, lcdc: u8) {
         if self.state != PpuState::OamSearch {
             panic!("Trying to search OAM when PPU State is not OamSearch");
         }
 
         if !self.oam_searched {
-            self.save_sprites();
+            let obj_size = (lcdc >> 2) & 1;
+            let sprite_height = if obj_size == 0 { 8 } else { 16 };
+            self.save_sprites(sprite_height);
         }
 
         if self.cycle > 20 {
@@ -54,9 +58,8 @@ impl Ppu {
         }
     }
 
-    fn save_sprites(&mut self) {
+    fn save_sprites(&mut self, sprite_height: u8) {
         self.saved_sprites.clear();
-        let sprite_height = 8; // todo: get from register instead of hardcoding
 
         for i in 0..40 {
             if self.saved_sprites.len() >= 10 {
@@ -69,7 +72,8 @@ impl Ppu {
             let flag = self.oam[base + 3];
 
             let ly_offset = self.ly as u16 + 16;
-            let is_overlapping = y as u16 <= ly_offset && ly_offset <= y as u16 + sprite_height;
+            let is_overlapping =
+                y as u16 <= ly_offset && ly_offset <= y as u16 + sprite_height as u16;
 
             if is_overlapping {
                 self.saved_sprites.push(Sprite {
@@ -83,7 +87,7 @@ impl Ppu {
         self.oam_searched = true;
     }
 
-    pub fn read_u8(&mut self, address: u16) -> u8 {
+    pub fn read_u8(&self, address: u16) -> u8 {
         match address {
             0x8000..=0x9FFF => self.vram[(address - 0x8000) as usize],
             0xFE00..=0xFE9F => self.oam[(address - 0xFE00) as usize],

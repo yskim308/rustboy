@@ -26,7 +26,8 @@ pub struct Bus {
 
 impl Bus {
     pub fn synchronize(&mut self, cycles: u8) {
-        self.ppu.step(cycles);
+        let lcdc = self.read_u8(0xFF40);
+        self.ppu.step(cycles, lcdc);
     }
 
     pub fn new(cartridge: Cartridge) -> Self {
@@ -44,7 +45,7 @@ impl Bus {
         }
     }
 
-    pub fn read_u8(&mut self, address: u16) -> u8 {
+    pub fn read_u8(&self, address: u16) -> u8 {
         match address {
             0x0000..=0x7FFF => self.cartridge.read_u8(address),
             0x8000..=0x9FFF => self.ppu.read_u8(address),
