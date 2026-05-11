@@ -1,3 +1,5 @@
+use std::iter::TakeWhile;
+
 use crate::bus::Bus;
 
 #[derive(PartialEq)]
@@ -34,6 +36,8 @@ pub(super) struct Ppu {
 
     oam_searched: bool,
     saved_sprites: Vec<Sprite>,
+
+    frame_buffer: [u8; 160 * 140],
 }
 
 impl Ppu {
@@ -42,9 +46,60 @@ impl Ppu {
         self.registers = ppu_registers;
         match self.state {
             PpuState::OamSearch => self.search_oam(self.registers.lcdc),
-            PpuState::PixelTransfer => todo!(),
+            PpuState::PixelTransfer => self.transfer_pixels(),
             PpuState::HBlank => todo!(),
             PpuState::VBlank => todo!(),
+        }
+    }
+
+    fn transfer_pixels(&mut self) {
+        self.draw_background();
+    }
+
+    fn draw_background(&mut self) {
+        let tile_map_address: u16 = if (self.registers.lcdc & 0x08) != 0 {
+            0x9C00
+        } else {
+            0x9800
+        };
+
+        let data_base_address: u16 = if (self.registers.lcdc & 0x10) != 0 {
+            0x8000
+        } else {
+            0x8800
+        };
+
+        let y = self.ly.wrapping_add(self.registers.scy);
+        let tile_row = (y / 8) as u16;
+        for i in 0..160 {
+            let x = self.registers.scx.wrapping_add(i);
+
+            // get tile id
+            let tile_col = (x / 8) as u16;
+            let tile_address = tile_map_address + tile_row * 32 + tile_col;
+            let tile_id = self.vram[(tile_address - 0x8000) as usize];
+
+            // from tile_id, get address of the two bytes for the row
+            let data_address = if data_base_address == 0x8000 {
+                data_base_address + (tile_id as u16 * 16)
+            } else {
+                let signed_id = tile_id as i8;
+                (0x9000_i32 + (signed_id as i32 * 16)) as u16
+            };
+            let row_offset = ((y % 8) * 2) as u16;
+            let data_index = (data_address + row_offset - 0x8000) as usize;
+
+            // use the two bytes to get the proper corresponding combined 2 bit data
+            let low = self.vram[data_index];
+            let high = self.vram[data_index.wrapping_add(1)];
+            let col_offset = x % 8;
+            let bit_pos = 7 - col_offset;
+
+            let color_bit_0 = (low >> bit_pos) & 1;
+            let color_bit_1 = (high >> bit_pos) & 1;
+
+            let pixel_val = (color_bit_1 << 1) | color_bit_0;
+            self.frame_buffer[(self.ly as usize * 160) + (i as usize)] = pixel_val;
         }
     }
 
@@ -123,6 +178,7 @@ impl Default for Ppu {
             oam_searched: false,
             saved_sprites: Vec::with_capacity(10),
             registers: PpuRegisters::default(),
+            frame_buffer: [0; 160 * 140],
         }
     }
 }
