@@ -22,6 +22,8 @@ pub struct PpuRegisters {
     pub lcdc: u8,
     pub scx: u8,
     pub scy: u8,
+    pub wy: u8,
+    pub wx: u8,
     pub bgp: u8,
 }
 
@@ -53,52 +55,104 @@ impl Ppu {
     }
 
     fn transfer_pixels(&mut self) {
-        self.draw_background();
+        if self.registers.lcdc & 0x01 != 0 {
+            self.draw_background();
+            self.draw_window();
+        } else {
+            for i in 0..160 {
+                self.frame_buffer[(self.ly as usize) * 160 + i] = 0;
+            }
+        }
+    }
+
+    fn get_tile_map_address(&self, bit_on: bool) -> u16 {
+        if bit_on { 0x9C00 } else { 0x9800 }
+    }
+
+    fn get_data_base_address(&self, bit_on: bool) -> u16 {
+        if bit_on { 0x8000 } else { 0x8800 }
+    }
+
+    fn get_data_address(
+        &self,
+        tile_row: u16,
+        tile_col: u16,
+        tile_map_address: u16,
+        data_base_address: u16,
+    ) -> u16 {
+        let tile_address = tile_map_address + tile_row * 32 + tile_col;
+        let tile_id = self.vram[(tile_address - 0x8000) as usize];
+
+        let data_address = if data_base_address == 0x8000 {
+            data_base_address + (tile_id as u16 * 16)
+        } else {
+            let signed_id = tile_id as i8;
+            (0x9000_i32 + (signed_id as i32 * 16)) as u16
+        };
+        data_address
+    }
+
+    fn get_pixel_val(&self, data_address: u16, x: u8, y: u8) -> u8 {
+        let row_offset = ((y % 8) * 2) as u16;
+        let data_index = (data_address + row_offset - 0x8000) as usize;
+
+        let low = self.vram[data_index];
+        let high = self.vram[data_index.wrapping_add(1)];
+        let col_offset = x % 8;
+        let bit_pos = 7 - col_offset;
+
+        let color_bit_0 = (low >> bit_pos) & 1;
+        let color_bit_1 = (high >> bit_pos) & 1;
+
+        (color_bit_1 << 1) | color_bit_0
+    }
+
+    fn draw_window(&mut self) {
+        if (self.registers.lcdc & 0x20) == 0 || self.ly < self.registers.wy {
+            return;
+        }
+
+        let bit_6_on = (self.registers.lcdc & 0x40) != 0;
+        let tile_map_address = self.get_tile_map_address(bit_6_on);
+
+        let bit_4_on = (self.registers.lcdc & 0x10) != 0;
+        let data_base_address = self.get_data_base_address(bit_4_on);
+
+        let window_y = self.ly - self.registers.wy;
+        let tile_row = (window_y / 8) as u16;
+
+        let screen_start_x = if self.registers.wx < 7 {
+            0
+        } else {
+            self.registers.wx - 7
+        };
+
+        for i in screen_start_x..160 {
+            let window_x = i + 7 - self.registers.wx;
+            let tile_col = (window_x / 8) as u16;
+            let data_address =
+                self.get_data_address(tile_row, tile_col, tile_map_address, data_base_address);
+            let pixel_val = self.get_pixel_val(data_address, window_x, window_y);
+            self.frame_buffer[(self.ly as usize * 160) + (i as usize)] = pixel_val;
+        }
     }
 
     fn draw_background(&mut self) {
-        let tile_map_address: u16 = if (self.registers.lcdc & 0x08) != 0 {
-            0x9C00
-        } else {
-            0x9800
-        };
+        let bit_3_on = (self.registers.lcdc & 0x08) != 0;
+        let tile_map_address = self.get_tile_map_address(bit_3_on);
 
-        let data_base_address: u16 = if (self.registers.lcdc & 0x10) != 0 {
-            0x8000
-        } else {
-            0x8800
-        };
+        let bit_4_on = (self.registers.lcdc & 0x10) != 0;
+        let data_base_address = self.get_data_base_address(bit_4_on);
 
         let y = self.ly.wrapping_add(self.registers.scy);
         let tile_row = (y / 8) as u16;
         for i in 0..160 {
             let x = self.registers.scx.wrapping_add(i);
 
-            // get tile id
             let tile_col = (x / 8) as u16;
-            let tile_address = tile_map_address + tile_row * 32 + tile_col;
-            let tile_id = self.vram[(tile_address - 0x8000) as usize];
-
-            // from tile_id, get address of the two bytes for the row
-            let data_address = if data_base_address == 0x8000 {
-                data_base_address + (tile_id as u16 * 16)
-            } else {
-                let signed_id = tile_id as i8;
-                (0x9000_i32 + (signed_id as i32 * 16)) as u16
-            };
-            let row_offset = ((y % 8) * 2) as u16;
-            let data_index = (data_address + row_offset - 0x8000) as usize;
-
-            // use the two bytes to get the proper corresponding combined 2 bit data
-            let low = self.vram[data_index];
-            let high = self.vram[data_index.wrapping_add(1)];
-            let col_offset = x % 8;
-            let bit_pos = 7 - col_offset;
-
-            let color_bit_0 = (low >> bit_pos) & 1;
-            let color_bit_1 = (high >> bit_pos) & 1;
-
-            let pixel_val = (color_bit_1 << 1) | color_bit_0;
+            let data_address =
+                self.get_data_address(tile_row, tile_col, tile_map_address, data_base_address);
+            let pixel_val = self.get_pixel_val(data_address, x, y);
             self.frame_buffer[(self.ly as usize * 160) + (i as usize)] = pixel_val;
         }
     }

@@ -33,6 +33,8 @@ impl Bus {
             lcdc: self.read_u8(0xFF40),
             scx: self.read_u8(0xFF42),
             scy: self.read_u8(0xFF43),
+            wy: self.read_u8(0xFF4A),
+            wx: self.read_u8(0xFF4B),
             bgp: self.read_u8(0xFF47),
         };
         self.ppu.step(cycles, ppu_registers);
