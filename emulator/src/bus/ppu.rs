@@ -58,11 +58,23 @@ impl Ppu {
         }
     }
 
-    fn init_palettes(&mut self) {
-        for i in 0..4 {
-            self.bg_palette[i] = (self.registers.bgp >> (i * 2)) & 0x03;
-            self.obj_palette_0[i] = (self.registers.obp0 >> (i * 2)) & 0x03;
-            self.obj_palette_1[i] = (self.registers.obp1 >> (i * 2)) & 0x03;
+    // ========================= STATE MACHINE ======================
+
+    fn search_oam(&mut self, lcdc: u8) {
+        if self.state != PpuState::OamSearch {
+            panic!("Trying to search OAM when PPU State is not OamSearch");
+        }
+
+        if !self.oam_searched {
+            let obj_size = (lcdc >> 2) & 1;
+            let sprite_height = if obj_size == 0 { 8 } else { 16 };
+            self.save_sprites(sprite_height);
+        }
+
+        if self.cycle >= 20 {
+            self.state = PpuState::PixelTransfer;
+            self.cycle = self.cycle % 20;
+            self.oam_searched = false;
         }
     }
 
@@ -86,66 +98,7 @@ impl Ppu {
         }
     }
 
-    fn draw_sprites(&mut self) {
-        let height = if self.registers.lcdc & 0x04 != 0 {
-            16
-        } else {
-            8
-        };
-
-        for sprite in self.saved_sprites.iter().rev() {
-            let y_flip = (sprite.flag & 0x40) != 0;
-            let x_flip = (sprite.flag & 0x20) != 0;
-            let bg_priority = (sprite.flag & 0x80) != 0;
-            let is_obp_1 = (sprite.flag & 0x10) != 0;
-
-            let mut tile_row = self.ly + 16 - sprite.y;
-
-            if y_flip {
-                tile_row = (height - 1) - tile_row;
-            }
-
-            let mut tile_index = sprite.tile_index;
-            if height == 16 {
-                tile_index &= 0xFE; // ignore bottom bit for 8x16 sprites
-                if tile_row >= 8 {
-                    tile_index |= 0x01; // use the bottom tile
-                }
-            }
-
-            let data_address = 0x8000 + (tile_index as u16 * 16);
-
-            for sprite_x in 0..8 {
-                let screen_x = sprite.x as i16 - 8 + sprite_x as i16;
-
-                if screen_x < 0 || screen_x >= 160 {
-                    continue;
-                }
-
-                let fetch_x = if x_flip { 7 - sprite_x } else { sprite_x };
-
-                let pixel_val = self.get_pixel_val(data_address, fetch_x, (tile_row % 8) as u8);
-
-                if pixel_val == 0 {
-                    continue;
-                }
-
-                let buffer_index = (self.ly as usize * 160) + screen_x as usize;
-                if bg_priority && self.bg_priority_buffer[screen_x as usize] {
-                    continue;
-                }
-
-                let final_shade = if is_obp_1 {
-                    self.obj_palette_1[pixel_val as usize]
-                } else {
-                    self.obj_palette_0[pixel_val as usize]
-                };
-
-                self.frame_buffer[buffer_index] = final_shade;
-            }
-        }
-    }
-
+    // =========================== HELPERS =========================
     fn get_tile_map_address(&self, bit_on: bool) -> u16 {
         if bit_on { 0x9C00 } else { 0x9800 }
     }
@@ -188,6 +141,43 @@ impl Ppu {
         (color_bit_1 << 1) | color_bit_0
     }
 
+    fn init_palettes(&mut self) {
+        for i in 0..4 {
+            self.bg_palette[i] = (self.registers.bgp >> (i * 2)) & 0x03;
+            self.obj_palette_0[i] = (self.registers.obp0 >> (i * 2)) & 0x03;
+            self.obj_palette_1[i] = (self.registers.obp1 >> (i * 2)) & 0x03;
+        }
+    }
+
+    // ====================== RENDERING PIPELINE =======================
+    fn save_sprites(&mut self, sprite_height: u8) {
+        self.saved_sprites.clear();
+
+        for i in 0..40 {
+            if self.saved_sprites.len() >= 10 {
+                break;
+            }
+            let base = i * 4;
+            let y = self.oam[base];
+            let x = self.oam[base + 1];
+            let tile_index = self.oam[base + 2];
+            let flag = self.oam[base + 3];
+
+            let ly_offset = self.ly as u16 + 16;
+            let is_overlapping =
+                y as u16 <= ly_offset && ly_offset < y as u16 + sprite_height as u16;
+
+            if is_overlapping {
+                self.saved_sprites.push(Sprite {
+                    x,
+                    y,
+                    tile_index,
+                    flag,
+                });
+            }
+        }
+        self.oam_searched = true;
+    }
     fn draw_window(&mut self) {
         if (self.registers.lcdc & 0x20) == 0 || self.ly < self.registers.wy {
             return;
@@ -242,53 +232,65 @@ impl Ppu {
         }
     }
 
-    fn search_oam(&mut self, lcdc: u8) {
-        if self.state != PpuState::OamSearch {
-            panic!("Trying to search OAM when PPU State is not OamSearch");
-        }
+    fn draw_sprites(&mut self) {
+        let height = if self.registers.lcdc & 0x04 != 0 {
+            16
+        } else {
+            8
+        };
 
-        if !self.oam_searched {
-            let obj_size = (lcdc >> 2) & 1;
-            let sprite_height = if obj_size == 0 { 8 } else { 16 };
-            self.save_sprites(sprite_height);
-        }
+        for sprite in self.saved_sprites.iter().rev() {
+            let y_flip = (sprite.flag & 0x40) != 0;
+            let x_flip = (sprite.flag & 0x20) != 0;
+            let bg_priority = (sprite.flag & 0x80) != 0;
+            let is_obp_1 = (sprite.flag & 0x10) != 0;
 
-        if self.cycle >= 20 {
-            self.state = PpuState::PixelTransfer;
-            self.cycle = self.cycle % 20;
-            self.oam_searched = false;
+            let mut tile_row = self.ly + 16 - sprite.y;
+
+            if y_flip {
+                tile_row = (height - 1) - tile_row;
+            }
+
+            let mut tile_index = sprite.tile_index;
+            if height == 16 {
+                tile_index &= 0xFE; // ignore bottom bit for 8x16 sprites
+                if tile_row >= 8 {
+                    tile_index |= 0x01; // use the bottom tile
+                }
+            }
+
+            let data_address = 0x8000 + (tile_index as u16 * 16);
+
+            for sprite_x in 0..8 {
+                let screen_x = sprite.x as i16 - 8 + sprite_x as i16;
+
+                if screen_x < 0 || screen_x >= 160 {
+                    continue;
+                }
+
+                let fetch_x = if x_flip { 7 - sprite_x } else { sprite_x };
+                let pixel_val = self.get_pixel_val(data_address, fetch_x, (tile_row % 8) as u8);
+                if pixel_val == 0 {
+                    continue;
+                }
+
+                let buffer_index = (self.ly as usize * 160) + screen_x as usize;
+                if bg_priority && self.bg_priority_buffer[screen_x as usize] {
+                    continue;
+                }
+
+                let final_shade = if is_obp_1 {
+                    self.obj_palette_1[pixel_val as usize]
+                } else {
+                    self.obj_palette_0[pixel_val as usize]
+                };
+
+                self.frame_buffer[buffer_index] = final_shade;
+            }
         }
     }
 
-    fn save_sprites(&mut self, sprite_height: u8) {
-        self.saved_sprites.clear();
-
-        for i in 0..40 {
-            if self.saved_sprites.len() >= 10 {
-                break;
-            }
-            let base = i * 4;
-            let y = self.oam[base];
-            let x = self.oam[base + 1];
-            let tile_index = self.oam[base + 2];
-            let flag = self.oam[base + 3];
-
-            let ly_offset = self.ly as u16 + 16;
-            let is_overlapping =
-                y as u16 <= ly_offset && ly_offset < y as u16 + sprite_height as u16;
-
-            if is_overlapping {
-                self.saved_sprites.push(Sprite {
-                    x,
-                    y,
-                    tile_index,
-                    flag,
-                });
-            }
-        }
-        self.oam_searched = true;
-    }
-
+    // ================= READ WRITE TO VRAM/OAM ======================
     pub fn read_u8(&self, address: u16) -> u8 {
         match address {
             0x8000..=0x9FFF => self.vram[(address - 0x8000) as usize],
