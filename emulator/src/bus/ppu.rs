@@ -43,7 +43,7 @@ pub(super) struct Ppu {
     obj_palette_0: [u8; 4],
     obj_palette_1: [u8; 4],
 
-    frame_buffer: [u8; 160 * 140],
+    frame_buffer: [u8; 160 * 144],
 }
 
 impl Ppu {
@@ -99,7 +99,7 @@ impl Ppu {
             let bg_priority = (sprite.flag & 0x80) != 0;
             let is_obp_1 = (sprite.flag & 0x10) != 0;
 
-            let mut tile_row = self.ly - sprite.y + 16;
+            let mut tile_row = self.ly + 16 - sprite.y;
 
             if y_flip {
                 tile_row = (height - 1) - tile_row;
@@ -251,7 +251,7 @@ impl Ppu {
             self.save_sprites(sprite_height);
         }
 
-        if self.cycle > 20 {
+        if self.cycle >= 20 {
             self.state = PpuState::PixelTransfer;
             self.cycle = self.cycle % 20;
             self.oam_searched = false;
@@ -273,7 +273,7 @@ impl Ppu {
 
             let ly_offset = self.ly as u16 + 16;
             let is_overlapping =
-                y as u16 <= ly_offset && ly_offset <= y as u16 + sprite_height as u16;
+                y as u16 <= ly_offset && ly_offset < y as u16 + sprite_height as u16;
 
             if is_overlapping {
                 self.saved_sprites.push(Sprite {
@@ -318,7 +318,7 @@ impl Default for Ppu {
             obj_palette_0: [0; 4],
             obj_palette_1: [0; 4],
             registers: PpuRegisters::default(),
-            frame_buffer: [0; 160 * 140],
+            frame_buffer: [0; 160 * 144],
         }
     }
 }
