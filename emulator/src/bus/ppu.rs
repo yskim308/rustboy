@@ -1,5 +1,3 @@
-use crate::bus::Bus;
-
 #[derive(PartialEq)]
 enum PpuState {
     OamSearch,
@@ -39,6 +37,7 @@ pub(super) struct Ppu {
     oam_searched: bool,
     saved_sprites: Vec<Sprite>,
 
+    bg_priority_buffer: [bool; 160],
     bg_palette: [u8; 4],
     obj_palette_0: [u8; 4],
     obj_palette_1: [u8; 4],
@@ -79,6 +78,7 @@ impl Ppu {
             for i in 0..160 {
                 self.frame_buffer[(self.ly as usize) * 160 + i] = 0;
             }
+            self.bg_priority_buffer.fill(false);
         }
 
         if self.registers.lcdc & 0x02 != 0 {
@@ -131,7 +131,7 @@ impl Ppu {
                 }
 
                 let buffer_index = (self.ly as usize * 160) + screen_x as usize;
-                if bg_priority && self.frame_buffer[buffer_index] != 0 {
+                if bg_priority && self.bg_priority_buffer[screen_x as usize] {
                     continue;
                 }
 
@@ -214,6 +214,7 @@ impl Ppu {
             let data_address =
                 self.get_data_address(tile_row, tile_col, tile_map_address, data_base_address);
             let pixel_val = self.get_pixel_val(data_address, window_x, window_y);
+            self.bg_priority_buffer[i as usize] = pixel_val != 0;
             self.frame_buffer[(self.ly as usize * 160) + (i as usize)] =
                 self.bg_palette[pixel_val as usize];
         }
@@ -235,6 +236,7 @@ impl Ppu {
             let data_address =
                 self.get_data_address(tile_row, tile_col, tile_map_address, data_base_address);
             let pixel_val = self.get_pixel_val(data_address, x, y);
+            self.bg_priority_buffer[i as usize] = pixel_val != 0;
             self.frame_buffer[(self.ly as usize * 160) + (i as usize)] =
                 self.bg_palette[pixel_val as usize];
         }
@@ -314,6 +316,7 @@ impl Default for Ppu {
             oam: [0; 160],
             oam_searched: false,
             saved_sprites: Vec::with_capacity(10),
+            bg_priority_buffer: [false; 160],
             bg_palette: [0; 4],
             obj_palette_0: [0; 4],
             obj_palette_1: [0; 4],
