@@ -1,5 +1,3 @@
-use std::iter::TakeWhile;
-
 use crate::bus::Bus;
 
 #[derive(PartialEq)]
@@ -55,12 +53,73 @@ impl Ppu {
     }
 
     fn transfer_pixels(&mut self) {
+        if self.state != PpuState::PixelTransfer {
+            panic!("Attempted pixel transfer in non pixel transfer state");
+        }
+
         if self.registers.lcdc & 0x01 != 0 {
             self.draw_background();
             self.draw_window();
         } else {
             for i in 0..160 {
                 self.frame_buffer[(self.ly as usize) * 160 + i] = 0;
+            }
+        }
+
+        if self.registers.lcdc & 0x02 != 0 {
+            self.draw_sprites();
+        }
+    }
+
+    fn draw_sprites(&mut self) {
+        let height = if self.registers.lcdc & 0x04 != 0 {
+            16
+        } else {
+            8
+        };
+
+        for sprite in self.saved_sprites.iter().rev() {
+            let y_flip = (sprite.flag & 0x40) != 0;
+            let x_flip = (sprite.flag & 0x20) != 0;
+            let bg_priority = (sprite.flag & 0x80) != 0;
+
+            let mut tile_row = self.ly - sprite.y + 16;
+
+            if y_flip {
+                tile_row = (height - 1) - tile_row;
+            }
+
+            let mut tile_index = sprite.tile_index;
+            if height == 16 {
+                tile_index &= 0xFE; // ignore bottom bit for 8x16 sprites
+                if tile_row >= 8 {
+                    tile_index |= 0x01; // use the bottom tile
+                }
+            }
+
+            let data_address = 0x8000 + (tile_index as u16 * 16);
+
+            for sprite_x in 0..8 {
+                let screen_x = sprite.x as i16 - 8 + sprite_x as i16;
+
+                if screen_x < 0 || screen_x >= 160 {
+                    continue;
+                }
+
+                let fetch_x = if x_flip { 7 - sprite_x } else { sprite_x };
+
+                let pixel_val = self.get_pixel_val(data_address, fetch_x, (tile_row % 8) as u8);
+
+                if pixel_val == 0 {
+                    continue;
+                }
+
+                let buffer_index = (self.ly as usize * 160) + screen_x as usize;
+                if bg_priority && self.frame_buffer[buffer_index] != 0 {
+                    continue;
+                }
+
+                self.frame_buffer[buffer_index] = pixel_val;
             }
         }
     }
