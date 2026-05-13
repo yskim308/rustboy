@@ -35,6 +35,8 @@ impl Bus {
             scy: self.read_u8(0xFF43),
             wy: self.read_u8(0xFF4A),
             wx: self.read_u8(0xFF4B),
+            obp0: self.read_u8(0xFF48),
+            obp1: self.read_u8(0xFF49),
             bgp: self.read_u8(0xFF47),
         };
         self.ppu.step(cycles, ppu_registers);

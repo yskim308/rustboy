@@ -22,6 +22,8 @@ pub struct PpuRegisters {
     pub scy: u8,
     pub wy: u8,
     pub wx: u8,
+    pub obp0: u8,
+    pub obp1: u8,
     pub bgp: u8,
 }
 
@@ -37,6 +39,10 @@ pub(super) struct Ppu {
     oam_searched: bool,
     saved_sprites: Vec<Sprite>,
 
+    bg_palette: [u8; 4],
+    obj_palette_0: [u8; 4],
+    obj_palette_1: [u8; 4],
+
     frame_buffer: [u8; 160 * 140],
 }
 
@@ -44,11 +50,20 @@ impl Ppu {
     pub fn step(&mut self, cycles: u8, ppu_registers: PpuRegisters) {
         self.cycle += cycles as u16;
         self.registers = ppu_registers;
+        self.init_palettes();
         match self.state {
             PpuState::OamSearch => self.search_oam(self.registers.lcdc),
             PpuState::PixelTransfer => self.transfer_pixels(),
             PpuState::HBlank => todo!(),
             PpuState::VBlank => todo!(),
+        }
+    }
+
+    fn init_palettes(&mut self) {
+        for i in 0..4 {
+            self.bg_palette[i] = (self.registers.bgp >> (i * 2)) & 0x03;
+            self.obj_palette_0[i] = (self.registers.obp0 >> (i * 2)) & 0x03;
+            self.obj_palette_1[i] = (self.registers.obp1 >> (i * 2)) & 0x03;
         }
     }
 
@@ -82,6 +97,7 @@ impl Ppu {
             let y_flip = (sprite.flag & 0x40) != 0;
             let x_flip = (sprite.flag & 0x20) != 0;
             let bg_priority = (sprite.flag & 0x80) != 0;
+            let is_obp_1 = (sprite.flag & 0x10) != 0;
 
             let mut tile_row = self.ly - sprite.y + 16;
 
@@ -119,7 +135,13 @@ impl Ppu {
                     continue;
                 }
 
-                self.frame_buffer[buffer_index] = pixel_val;
+                let final_shade = if is_obp_1 {
+                    self.obj_palette_1[pixel_val as usize]
+                } else {
+                    self.obj_palette_0[pixel_val as usize]
+                };
+
+                self.frame_buffer[buffer_index] = final_shade;
             }
         }
     }
@@ -192,7 +214,8 @@ impl Ppu {
             let data_address =
                 self.get_data_address(tile_row, tile_col, tile_map_address, data_base_address);
             let pixel_val = self.get_pixel_val(data_address, window_x, window_y);
-            self.frame_buffer[(self.ly as usize * 160) + (i as usize)] = pixel_val;
+            self.frame_buffer[(self.ly as usize * 160) + (i as usize)] =
+                self.bg_palette[pixel_val as usize];
         }
     }
 
@@ -212,7 +235,8 @@ impl Ppu {
             let data_address =
                 self.get_data_address(tile_row, tile_col, tile_map_address, data_base_address);
             let pixel_val = self.get_pixel_val(data_address, x, y);
-            self.frame_buffer[(self.ly as usize * 160) + (i as usize)] = pixel_val;
+            self.frame_buffer[(self.ly as usize * 160) + (i as usize)] =
+                self.bg_palette[pixel_val as usize];
         }
     }
 
@@ -290,6 +314,9 @@ impl Default for Ppu {
             oam: [0; 160],
             oam_searched: false,
             saved_sprites: Vec::with_capacity(10),
+            bg_palette: [0; 4],
+            obj_palette_0: [0; 4],
+            obj_palette_1: [0; 4],
             registers: PpuRegisters::default(),
             frame_buffer: [0; 160 * 140],
         }
