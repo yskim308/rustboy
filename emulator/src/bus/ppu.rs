@@ -6,6 +6,11 @@ enum PpuState {
     VBlank,
 }
 
+const OAM_SEARCH_CYCLES: u16 = 80;
+const PIXEL_TRANSFER_CYCLES: u16 = 172;
+const HBLANK_CYCLES: u16 = 204;
+const SCANLINE_CYCLES: u16 = 456;
+
 struct Sprite {
     x: u8,
     y: u8,
@@ -47,20 +52,48 @@ pub(super) struct Ppu {
 }
 
 impl Ppu {
-    pub fn step(&mut self, cycles: u8, ppu_registers: PpuRegisters) {
+    pub fn step(&mut self, cycles: u8, ppu_registers: PpuRegisters) -> bool {
         self.cycle = self.cycle.wrapping_add(cycles as u16);
         self.registers = ppu_registers;
         self.init_palettes();
+
+        if self.registers.lcdc & 0x80 == 0 {
+            self.reset_for_disabled_lcd();
+            return false;
+        }
+
         match self.state {
             PpuState::OamSearch => self.search_oam(self.registers.lcdc),
             PpuState::PixelTransfer => self.transfer_pixels(),
-            PpuState::HBlank => self.hblank(),
-            PpuState::VBlank => self.vblank(),
+            PpuState::HBlank => return self.hblank(),
+            PpuState::VBlank => return self.vblank(),
         }
+
+        false
     }
 
     pub fn get_frame_buffer(&self) -> &[u8] {
         &self.frame_buffer
+    }
+
+    pub fn ly(&self) -> u8 {
+        self.ly
+    }
+
+    pub fn reset_ly(&mut self) {
+        self.ly = 0;
+    }
+
+    pub fn stat(&self, stat_register: u8, lyc: u8) -> u8 {
+        let mode = match self.state {
+            PpuState::HBlank => 0,
+            PpuState::VBlank => 1,
+            PpuState::OamSearch => 2,
+            PpuState::PixelTransfer => 3,
+        };
+        let coincidence = u8::from(self.ly == lyc) << 2;
+
+        (stat_register & 0xF8) | coincidence | mode
     }
 
     // ========================= STATE MACHINE ======================
@@ -70,18 +103,16 @@ impl Ppu {
             panic!("Trying to search OAM when PPU State is not OamSearch");
         }
 
-        if self.oam_searched {
-            return;
+        if !self.oam_searched {
+            let obj_size = (lcdc >> 2) & 1;
+            let sprite_height = if obj_size == 0 { 8 } else { 16 };
+            self.save_sprites(sprite_height);
+            self.oam_searched = true;
         }
 
-        let obj_size = (lcdc >> 2) & 1;
-        let sprite_height = if obj_size == 0 { 8 } else { 16 };
-        self.save_sprites(sprite_height);
-        self.oam_searched = true;
-
-        if self.cycle >= 20 {
+        if self.cycle >= OAM_SEARCH_CYCLES {
             self.state = PpuState::PixelTransfer;
-            self.cycle -= 20;
+            self.cycle -= OAM_SEARCH_CYCLES;
             self.oam_searched = false;
         }
     }
@@ -91,52 +122,53 @@ impl Ppu {
             panic!("Attempted pixel transfer in non pixel transfer state");
         }
 
-        if self.pixel_transferred {
-            return;
-        }
-
-        if self.registers.lcdc & 0x01 != 0 {
-            self.draw_background();
-            self.draw_window();
-        } else {
-            for i in 0..160 {
-                self.frame_buffer[(self.ly as usize) * 160 + i] = 0;
+        if !self.pixel_transferred {
+            if self.registers.lcdc & 0x01 != 0 {
+                self.draw_background();
+                self.draw_window();
+            } else {
+                for i in 0..160 {
+                    self.frame_buffer[(self.ly as usize) * 160 + i] = 0;
+                }
+                self.bg_priority_buffer.fill(false);
             }
-            self.bg_priority_buffer.fill(false);
+
+            if self.registers.lcdc & 0x02 != 0 {
+                self.draw_sprites();
+            }
+            self.pixel_transferred = true;
         }
 
-        if self.registers.lcdc & 0x02 != 0 {
-            self.draw_sprites();
-        }
-        self.pixel_transferred = true;
-
-        if self.cycle >= 43 {
+        if self.cycle >= PIXEL_TRANSFER_CYCLES {
             self.state = PpuState::HBlank;
-            self.cycle -= 43;
+            self.cycle -= PIXEL_TRANSFER_CYCLES;
             self.pixel_transferred = false;
         }
     }
 
-    fn hblank(&mut self) {
+    fn hblank(&mut self) -> bool {
         if self.state != PpuState::HBlank {
             panic!("Attempted HBlank in non HBlank state");
         }
 
-        if self.cycle >= 51 {
-            self.cycle -= 51;
+        if self.cycle >= HBLANK_CYCLES {
+            self.cycle -= HBLANK_CYCLES;
 
             self.ly += 1;
             if self.ly == 144 {
                 self.state = PpuState::VBlank;
+                return true;
             } else {
                 self.state = PpuState::OamSearch;
             }
         }
+
+        false
     }
 
-    fn vblank(&mut self) {
-        if self.cycle >= 114 {
-            self.cycle -= 114;
+    fn vblank(&mut self) -> bool {
+        if self.cycle >= SCANLINE_CYCLES {
+            self.cycle -= SCANLINE_CYCLES;
             self.ly += 1;
 
             if self.ly >= 154 {
@@ -144,6 +176,19 @@ impl Ppu {
                 self.state = PpuState::OamSearch;
             }
         }
+
+        false
+    }
+
+    fn reset_for_disabled_lcd(&mut self) {
+        self.ly = 0;
+        self.cycle = 0;
+        self.state = PpuState::OamSearch;
+        self.oam_searched = false;
+        self.pixel_transferred = false;
+        self.saved_sprites.clear();
+        self.bg_priority_buffer.fill(false);
+        self.frame_buffer.fill(0);
     }
     // =========================== HELPERS =========================
     fn get_tile_map_address(&self, bit_on: bool) -> u16 {
