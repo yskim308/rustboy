@@ -82,7 +82,7 @@ impl Bus {
 
     pub fn write_u8(&mut self, address: u16, data: u8) {
         match address {
-            0x0000..=0x7FFF => println!("accessed ROM as write for MBC"),
+            0x0000..=0x7FFF => log::trace!("accessed ROM as write for MBC"),
             0x8000..=0x9FFF => self.ppu.write_u8(address, data),
             0xA000..=0xBFFF => self.eram[(address - 0xA000) as usize] = data,
             0xC000..=0xDFFF => self.wram.write_u8(address - 0xC000, data),

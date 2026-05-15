@@ -57,6 +57,17 @@ impl Cpu {
             self.advance_pc();
         }
 
+        log::trace!(
+            "PC: {:#06X} | OP: {:#04X} | AF: {:#06X} BC: {:#06X} DE: {:#06X} HL: {:#06X} SP: {:#06X}",
+            self.registers.pc,
+            read_byte,
+            self.registers.get_af(),
+            self.registers.get_bc(),
+            self.registers.get_de(),
+            self.registers.get_hl(),
+            self.registers.sp
+        );
+
         let cycles = self.execute(read_byte, bus);
 
         if self.ime_pending {
@@ -108,6 +119,7 @@ impl Cpu {
     pub fn execute(&mut self, opcode: u8, bus: &mut Bus) -> u8 {
         // https://izik1.github.io/gbops/
         // every opcode is developed through TDD, see cpu/tests
+        log::trace!("Executing: {:#04x}", opcode);
         match opcode {
             0x00 => self.nop(),
             0x01 => self.ld_bc_u16(bus),

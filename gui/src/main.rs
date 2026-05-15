@@ -14,6 +14,7 @@ const PALETTE: [u32; 4] = [
 ];
 
 fn main() {
+    env_logger::init();
     let file_path = env::args().nth(1).unwrap_or_else(read_file_path);
 
     let rom_data = fs::read(file_path).expect("Failed to read ROM from given file path");
