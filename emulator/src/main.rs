@@ -1,14 +1,6 @@
 use std::{env, fs, io};
 
-use crate::{
-    bus::{Bus, cartridge::Cartridge, wram::Wram},
-    cpu::Cpu,
-    gameboy::Gameboy,
-};
-
-mod bus;
-mod cpu;
-mod gameboy;
+use emulator::{Bus, Cartridge, Cpu, Gameboy};
 
 fn main() {
     let file_path = env::args().nth(1).unwrap_or_else(read_file_path);

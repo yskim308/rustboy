@@ -1,4 +1,6 @@
-use emulator::Gameboy; // Adjust imports based on your actual module structure
+use std::{env, fs, io};
+
+use emulator::{Bus, Cartridge, Cpu, Gameboy};
 use minifb::{Key, Window, WindowOptions};
 
 const WIDTH: usize = 160;
@@ -12,7 +14,12 @@ const PALETTE: [u32; 4] = [
 ];
 
 fn main() {
-    let bus = Bus::new();
+    let file_path = env::args().nth(1).unwrap_or_else(read_file_path);
+
+    let rom_data = fs::read(file_path).expect("Failed to read ROM from given file path");
+
+    let cartridge = Cartridge::new(rom_data);
+    let bus = Bus::new(cartridge);
     let cpu = Cpu::new();
     let mut gameboy = Gameboy::new(bus, cpu);
 
@@ -36,9 +43,6 @@ fn main() {
 
         let gb_buffer = gameboy.get_frame_buffer();
 
-        // (Mock buffer for demonstration - replace this loop with the one below)
-        let gb_buffer = [0u8; WIDTH * HEIGHT];
-
         // 3. Translate the u8 shades into u32 ARGB colors
         for (i, &pixel_shade) in gb_buffer.iter().enumerate() {
             // Guard against out-of-bounds if your palette data ever exceeds 3
@@ -51,4 +55,15 @@ fn main() {
             .update_with_buffer(&display_buffer, WIDTH, HEIGHT)
             .unwrap();
     }
+}
+
+fn read_file_path() -> String {
+    let mut file_path = String::new();
+
+    println!("Path (path/to/rom): ");
+    io::stdin()
+        .read_line(&mut file_path)
+        .expect("Failed while reading input");
+
+    file_path.trim().to_string()
 }
