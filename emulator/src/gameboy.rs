@@ -14,4 +14,8 @@ impl Gameboy {
         let cycles = self.cpu.step(&mut self.bus);
         self.bus.synchronize(cycles);
     }
+
+    pub fn get_frame_buffer(&self) -> &[u8] {
+        self.bus.get_ppu_frame_buffer()
+    }
 }

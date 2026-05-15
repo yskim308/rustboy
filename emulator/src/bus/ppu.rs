@@ -59,6 +59,10 @@ impl Ppu {
         }
     }
 
+    pub fn get_frame_buffer(&self) -> &[u8] {
+        &self.frame_buffer
+    }
+
     // ========================= STATE MACHINE ======================
 
     fn search_oam(&mut self, lcdc: u8) {

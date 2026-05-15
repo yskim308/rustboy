@@ -1,0 +1,8 @@
+[package]
+name = "gui"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+emulator = { path = "../emulator"}
+minifb = "0.25"

@@ -42,6 +42,10 @@ impl Bus {
         self.ppu.step(cycles, ppu_registers);
     }
 
+    pub fn get_ppu_frame_buffer(&self) -> &[u8] {
+        self.ppu.get_frame_buffer()
+    }
+
     pub fn new(cartridge: Cartridge) -> Self {
         Self {
             cartridge,

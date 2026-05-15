@@ -1,4 +1,7 @@
+target
 emulator/target
 emulator/build
-emulator/game_roms
+game_roms
+gui/target
+gui/build
 .DS_Store
