@@ -48,7 +48,7 @@ pub(super) struct Ppu {
 
 impl Ppu {
     pub fn step(&mut self, cycles: u8, ppu_registers: PpuRegisters) {
-        self.cycle += cycles as u16;
+        self.cycle = self.cycle.wrapping_add(cycles as u16);
         self.registers = ppu_registers;
         self.init_palettes();
         match self.state {
@@ -358,6 +358,7 @@ impl Default for Ppu {
             state: PpuState::OamSearch,
             vram: [0; 8192],
             oam: [0; 160],
+            pixel_transferred: false,
             oam_searched: false,
             saved_sprites: Vec::with_capacity(10),
             bg_priority_buffer: [false; 160],
