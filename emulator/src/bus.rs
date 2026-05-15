@@ -1,5 +1,3 @@
-use std::panic;
-
 use crate::bus::{
     cartridge::Cartridge,
     ppu::{Ppu, PpuRegisters},
@@ -75,10 +73,10 @@ impl Bus {
             0xC000..=0xDFFF => self.wram.read_u8(address - 0xC000),
             0xE000..=0xFDFF => self.wram.read_u8(address - 0xE000), // echo ram
             0xFE00..=0xFE9F => self.ppu.read_u8(address),
+            0xFEA0..=0xFEFF => 0x00,
             0xFF00..=0xFF7F => self.read_io(address),
             0xFF80..=0xFFFE => self.hram[(address - 0xFF80) as usize],
             0xFFFF => self.ie_register,
-            _ => panic!("Invalid read access to address {:#04X}", address),
         }
     }
 
@@ -90,10 +88,10 @@ impl Bus {
             0xC000..=0xDFFF => self.wram.write_u8(address - 0xC000, data),
             0xE000..=0xFDFF => self.wram.write_u8(address - 0xE000, data), // echo ram
             0xFE00..=0xFE9F => self.ppu.write_u8(address, data),
+            0xFEA0..=0xFEFF => (),
             0xFF00..=0xFF7F => self.write_io(address, data),
             0xFF80..=0xFFFE => self.hram[(address - 0xFF80) as usize] = data,
             0xFFFF => self.ie_register = data,
-            _ => panic!("Invalid write access to address {:#04X}", address),
         }
     }
 
