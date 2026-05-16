@@ -95,8 +95,12 @@ mod tests {
     test_inc_rr!(execute_0x23, 0x23, set_hl, get_hl);
     test_dec_rr!(execute_0x2B, 0x2B, set_hl, get_hl);
 
-    test_add_hl_rr!(execute_0x09, 0x09, |cpu: &mut Cpu| cpu.registers.set_bc(0x0001));
-    test_add_hl_rr!(execute_0x19, 0x19, |cpu: &mut Cpu| cpu.registers.set_de(0x0001));
+    test_add_hl_rr!(execute_0x09, 0x09, |cpu: &mut Cpu| cpu
+        .registers
+        .set_bc(0x0001));
+    test_add_hl_rr!(execute_0x19, 0x19, |cpu: &mut Cpu| cpu
+        .registers
+        .set_de(0x0001));
 
     #[test]
     fn execute_0x08() {

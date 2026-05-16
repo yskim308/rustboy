@@ -131,162 +131,294 @@ mod tests {
         assert_eq!(cpu.set_u8(0, 0x00), 0x01);
     }
 
-    test_cb_reg!(execute_cb_0x00, 0x00, |cpu: &mut Cpu| {
-        cpu.registers.b = 0x80;
-    }, |cpu: &Cpu, _| {
-        assert_eq!(cpu.registers.b, 0x01);
-        assert_flags(cpu, false, false, false, true);
-    });
+    test_cb_reg!(
+        execute_cb_0x00,
+        0x00,
+        |cpu: &mut Cpu| {
+            cpu.registers.b = 0x80;
+        },
+        |cpu: &Cpu, _| {
+            assert_eq!(cpu.registers.b, 0x01);
+            assert_flags(cpu, false, false, false, true);
+        }
+    );
 
-    test_cb_hl!(execute_cb_0x06, 0x06, 16, 0x80, |_cpu: &mut Cpu| {}, |cpu: &Cpu, bus: &Bus| {
-        assert_eq!(bus.read_u8(MEM_ADDR), 0x01);
-        assert_flags(cpu, false, false, false, true);
-    });
+    test_cb_hl!(
+        execute_cb_0x06,
+        0x06,
+        16,
+        0x80,
+        |_cpu: &mut Cpu| {},
+        |cpu: &Cpu, bus: &Bus| {
+            assert_eq!(bus.read_u8(MEM_ADDR), 0x01);
+            assert_flags(cpu, false, false, false, true);
+        }
+    );
 
-    test_cb_reg!(execute_cb_0x08, 0x08, |cpu: &mut Cpu| {
-        cpu.registers.b = 0x01;
-    }, |cpu: &Cpu, _| {
-        assert_eq!(cpu.registers.b, 0x80);
-        assert_flags(cpu, false, false, false, true);
-    });
+    test_cb_reg!(
+        execute_cb_0x08,
+        0x08,
+        |cpu: &mut Cpu| {
+            cpu.registers.b = 0x01;
+        },
+        |cpu: &Cpu, _| {
+            assert_eq!(cpu.registers.b, 0x80);
+            assert_flags(cpu, false, false, false, true);
+        }
+    );
 
-    test_cb_hl!(execute_cb_0x0E, 0x0E, 16, 0x01, |_cpu: &mut Cpu| {}, |cpu: &Cpu, bus: &Bus| {
-        assert_eq!(bus.read_u8(MEM_ADDR), 0x80);
-        assert_flags(cpu, false, false, false, true);
-    });
+    test_cb_hl!(
+        execute_cb_0x0E,
+        0x0E,
+        16,
+        0x01,
+        |_cpu: &mut Cpu| {},
+        |cpu: &Cpu, bus: &Bus| {
+            assert_eq!(bus.read_u8(MEM_ADDR), 0x80);
+            assert_flags(cpu, false, false, false, true);
+        }
+    );
 
-    test_cb_reg!(execute_cb_0x10, 0x10, |cpu: &mut Cpu| {
-        cpu.registers.b = 0x80;
-        cpu.registers.set_c(true);
-    }, |cpu: &Cpu, _| {
-        assert_eq!(cpu.registers.b, 0x01);
-        assert_flags(cpu, false, false, false, true);
-    });
+    test_cb_reg!(
+        execute_cb_0x10,
+        0x10,
+        |cpu: &mut Cpu| {
+            cpu.registers.b = 0x80;
+            cpu.registers.set_c(true);
+        },
+        |cpu: &Cpu, _| {
+            assert_eq!(cpu.registers.b, 0x01);
+            assert_flags(cpu, false, false, false, true);
+        }
+    );
 
-    test_cb_hl!(execute_cb_0x16, 0x16, 16, 0x80, |cpu: &mut Cpu| {
-        cpu.registers.set_c(true);
-    }, |cpu: &Cpu, bus: &Bus| {
-        assert_eq!(bus.read_u8(MEM_ADDR), 0x01);
-        assert_flags(cpu, false, false, false, true);
-    });
+    test_cb_hl!(
+        execute_cb_0x16,
+        0x16,
+        16,
+        0x80,
+        |cpu: &mut Cpu| {
+            cpu.registers.set_c(true);
+        },
+        |cpu: &Cpu, bus: &Bus| {
+            assert_eq!(bus.read_u8(MEM_ADDR), 0x01);
+            assert_flags(cpu, false, false, false, true);
+        }
+    );
 
-    test_cb_reg!(execute_cb_0x18, 0x18, |cpu: &mut Cpu| {
-        cpu.registers.b = 0x01;
-        cpu.registers.set_c(true);
-    }, |cpu: &Cpu, _| {
-        assert_eq!(cpu.registers.b, 0x80);
-        assert_flags(cpu, false, false, false, true);
-    });
+    test_cb_reg!(
+        execute_cb_0x18,
+        0x18,
+        |cpu: &mut Cpu| {
+            cpu.registers.b = 0x01;
+            cpu.registers.set_c(true);
+        },
+        |cpu: &Cpu, _| {
+            assert_eq!(cpu.registers.b, 0x80);
+            assert_flags(cpu, false, false, false, true);
+        }
+    );
 
-    test_cb_hl!(execute_cb_0x1E, 0x1E, 16, 0x01, |cpu: &mut Cpu| {
-        cpu.registers.set_c(true);
-    }, |cpu: &Cpu, bus: &Bus| {
-        assert_eq!(bus.read_u8(MEM_ADDR), 0x80);
-        assert_flags(cpu, false, false, false, true);
-    });
+    test_cb_hl!(
+        execute_cb_0x1E,
+        0x1E,
+        16,
+        0x01,
+        |cpu: &mut Cpu| {
+            cpu.registers.set_c(true);
+        },
+        |cpu: &Cpu, bus: &Bus| {
+            assert_eq!(bus.read_u8(MEM_ADDR), 0x80);
+            assert_flags(cpu, false, false, false, true);
+        }
+    );
 
-    test_cb_reg!(execute_cb_0x20, 0x20, |cpu: &mut Cpu| {
-        cpu.registers.b = 0x80;
-    }, |cpu: &Cpu, _| {
-        assert_eq!(cpu.registers.b, 0x00);
-        assert_flags(cpu, true, false, false, true);
-    });
+    test_cb_reg!(
+        execute_cb_0x20,
+        0x20,
+        |cpu: &mut Cpu| {
+            cpu.registers.b = 0x80;
+        },
+        |cpu: &Cpu, _| {
+            assert_eq!(cpu.registers.b, 0x00);
+            assert_flags(cpu, true, false, false, true);
+        }
+    );
 
-    test_cb_hl!(execute_cb_0x26, 0x26, 16, 0x80, |_cpu: &mut Cpu| {}, |cpu: &Cpu, bus: &Bus| {
-        assert_eq!(bus.read_u8(MEM_ADDR), 0x00);
-        assert_flags(cpu, true, false, false, true);
-    });
+    test_cb_hl!(
+        execute_cb_0x26,
+        0x26,
+        16,
+        0x80,
+        |_cpu: &mut Cpu| {},
+        |cpu: &Cpu, bus: &Bus| {
+            assert_eq!(bus.read_u8(MEM_ADDR), 0x00);
+            assert_flags(cpu, true, false, false, true);
+        }
+    );
 
-    test_cb_reg!(execute_cb_0x28, 0x28, |cpu: &mut Cpu| {
-        cpu.registers.b = 0x81;
-    }, |cpu: &Cpu, _| {
-        assert_eq!(cpu.registers.b, 0xC0);
-        assert_flags(cpu, false, false, false, true);
-    });
+    test_cb_reg!(
+        execute_cb_0x28,
+        0x28,
+        |cpu: &mut Cpu| {
+            cpu.registers.b = 0x81;
+        },
+        |cpu: &Cpu, _| {
+            assert_eq!(cpu.registers.b, 0xC0);
+            assert_flags(cpu, false, false, false, true);
+        }
+    );
 
-    test_cb_hl!(execute_cb_0x2E, 0x2E, 16, 0x81, |_cpu: &mut Cpu| {}, |cpu: &Cpu, bus: &Bus| {
-        assert_eq!(bus.read_u8(MEM_ADDR), 0xC0);
-        assert_flags(cpu, false, false, false, true);
-    });
+    test_cb_hl!(
+        execute_cb_0x2E,
+        0x2E,
+        16,
+        0x81,
+        |_cpu: &mut Cpu| {},
+        |cpu: &Cpu, bus: &Bus| {
+            assert_eq!(bus.read_u8(MEM_ADDR), 0xC0);
+            assert_flags(cpu, false, false, false, true);
+        }
+    );
 
-    test_cb_reg!(execute_cb_0x30, 0x30, |cpu: &mut Cpu| {
-        cpu.registers.b = 0xF0;
-    }, |cpu: &Cpu, _| {
-        assert_eq!(cpu.registers.b, 0x0F);
-        assert_flags(cpu, false, false, false, false);
-    });
+    test_cb_reg!(
+        execute_cb_0x30,
+        0x30,
+        |cpu: &mut Cpu| {
+            cpu.registers.b = 0xF0;
+        },
+        |cpu: &Cpu, _| {
+            assert_eq!(cpu.registers.b, 0x0F);
+            assert_flags(cpu, false, false, false, false);
+        }
+    );
 
-    test_cb_hl!(execute_cb_0x36, 0x36, 16, 0xF0, |_cpu: &mut Cpu| {}, |cpu: &Cpu, bus: &Bus| {
-        assert_eq!(bus.read_u8(MEM_ADDR), 0x0F);
-        assert_flags(cpu, false, false, false, false);
-    });
+    test_cb_hl!(
+        execute_cb_0x36,
+        0x36,
+        16,
+        0xF0,
+        |_cpu: &mut Cpu| {},
+        |cpu: &Cpu, bus: &Bus| {
+            assert_eq!(bus.read_u8(MEM_ADDR), 0x0F);
+            assert_flags(cpu, false, false, false, false);
+        }
+    );
 
-    test_cb_reg!(execute_cb_0x38, 0x38, |cpu: &mut Cpu| {
-        cpu.registers.b = 0x01;
-    }, |cpu: &Cpu, _| {
-        assert_eq!(cpu.registers.b, 0x00);
-        assert_flags(cpu, true, false, false, true);
-    });
+    test_cb_reg!(
+        execute_cb_0x38,
+        0x38,
+        |cpu: &mut Cpu| {
+            cpu.registers.b = 0x01;
+        },
+        |cpu: &Cpu, _| {
+            assert_eq!(cpu.registers.b, 0x00);
+            assert_flags(cpu, true, false, false, true);
+        }
+    );
 
-    test_cb_hl!(execute_cb_0x3E, 0x3E, 16, 0x01, |_cpu: &mut Cpu| {}, |cpu: &Cpu, bus: &Bus| {
-        assert_eq!(bus.read_u8(MEM_ADDR), 0x00);
-        assert_flags(cpu, true, false, false, true);
-    });
+    test_cb_hl!(
+        execute_cb_0x3E,
+        0x3E,
+        16,
+        0x01,
+        |_cpu: &mut Cpu| {},
+        |cpu: &Cpu, bus: &Bus| {
+            assert_eq!(bus.read_u8(MEM_ADDR), 0x00);
+            assert_flags(cpu, true, false, false, true);
+        }
+    );
 
-    test_cb_reg!(execute_cb_0x40, 0x40, |cpu: &mut Cpu| {
-        cpu.registers.b = 0x00;
-        cpu.registers.set_c(true);
-    }, |cpu: &Cpu, _| {
-        assert_eq!(cpu.registers.b, 0x00);
-        assert_flags(cpu, true, false, true, true);
-    });
+    test_cb_reg!(
+        execute_cb_0x40,
+        0x40,
+        |cpu: &mut Cpu| {
+            cpu.registers.b = 0x00;
+            cpu.registers.set_c(true);
+        },
+        |cpu: &Cpu, _| {
+            assert_eq!(cpu.registers.b, 0x00);
+            assert_flags(cpu, true, false, true, true);
+        }
+    );
 
-    test_cb_hl!(execute_cb_0x46, 0x46, 12, 0x01, |cpu: &mut Cpu| {
-        cpu.registers.set_c(true);
-    }, |cpu: &Cpu, bus: &Bus| {
-        assert_eq!(bus.read_u8(MEM_ADDR), 0x01);
-        assert_flags(cpu, false, false, true, true);
-    });
+    test_cb_hl!(
+        execute_cb_0x46,
+        0x46,
+        12,
+        0x01,
+        |cpu: &mut Cpu| {
+            cpu.registers.set_c(true);
+        },
+        |cpu: &Cpu, bus: &Bus| {
+            assert_eq!(bus.read_u8(MEM_ADDR), 0x01);
+            assert_flags(cpu, false, false, true, true);
+        }
+    );
 
-    test_cb_reg!(execute_cb_0x80, 0x80, |cpu: &mut Cpu| {
-        cpu.registers.b = 0xFF;
-        cpu.registers.set_z(true);
-        cpu.registers.set_n(true);
-        cpu.registers.set_h(true);
-        cpu.registers.set_c(true);
-    }, |cpu: &Cpu, _| {
-        assert_eq!(cpu.registers.b, 0xFE);
-        assert_flags(cpu, true, true, true, true);
-    });
+    test_cb_reg!(
+        execute_cb_0x80,
+        0x80,
+        |cpu: &mut Cpu| {
+            cpu.registers.b = 0xFF;
+            cpu.registers.set_z(true);
+            cpu.registers.set_n(true);
+            cpu.registers.set_h(true);
+            cpu.registers.set_c(true);
+        },
+        |cpu: &Cpu, _| {
+            assert_eq!(cpu.registers.b, 0xFE);
+            assert_flags(cpu, true, true, true, true);
+        }
+    );
 
-    test_cb_hl!(execute_cb_0x86, 0x86, 16, 0xFF, |cpu: &mut Cpu| {
-        cpu.registers.set_z(true);
-        cpu.registers.set_n(true);
-        cpu.registers.set_h(true);
-        cpu.registers.set_c(true);
-    }, |cpu: &Cpu, bus: &Bus| {
-        assert_eq!(bus.read_u8(MEM_ADDR), 0xFE);
-        assert_flags(cpu, true, true, true, true);
-    });
+    test_cb_hl!(
+        execute_cb_0x86,
+        0x86,
+        16,
+        0xFF,
+        |cpu: &mut Cpu| {
+            cpu.registers.set_z(true);
+            cpu.registers.set_n(true);
+            cpu.registers.set_h(true);
+            cpu.registers.set_c(true);
+        },
+        |cpu: &Cpu, bus: &Bus| {
+            assert_eq!(bus.read_u8(MEM_ADDR), 0xFE);
+            assert_flags(cpu, true, true, true, true);
+        }
+    );
 
-    test_cb_reg!(execute_cb_0xC0, 0xC0, |cpu: &mut Cpu| {
-        cpu.registers.b = 0x00;
-        cpu.registers.set_z(true);
-        cpu.registers.set_n(true);
-        cpu.registers.set_h(true);
-        cpu.registers.set_c(true);
-    }, |cpu: &Cpu, _| {
-        assert_eq!(cpu.registers.b, 0x01);
-        assert_flags(cpu, true, true, true, true);
-    });
+    test_cb_reg!(
+        execute_cb_0xC0,
+        0xC0,
+        |cpu: &mut Cpu| {
+            cpu.registers.b = 0x00;
+            cpu.registers.set_z(true);
+            cpu.registers.set_n(true);
+            cpu.registers.set_h(true);
+            cpu.registers.set_c(true);
+        },
+        |cpu: &Cpu, _| {
+            assert_eq!(cpu.registers.b, 0x01);
+            assert_flags(cpu, true, true, true, true);
+        }
+    );
 
-    test_cb_hl!(execute_cb_0xC6, 0xC6, 16, 0x00, |cpu: &mut Cpu| {
-        cpu.registers.set_z(true);
-        cpu.registers.set_n(true);
-        cpu.registers.set_h(true);
-        cpu.registers.set_c(true);
-    }, |cpu: &Cpu, bus: &Bus| {
-        assert_eq!(bus.read_u8(MEM_ADDR), 0x01);
-        assert_flags(cpu, true, true, true, true);
-    });
+    test_cb_hl!(
+        execute_cb_0xC6,
+        0xC6,
+        16,
+        0x00,
+        |cpu: &mut Cpu| {
+            cpu.registers.set_z(true);
+            cpu.registers.set_n(true);
+            cpu.registers.set_h(true);
+            cpu.registers.set_c(true);
+        },
+        |cpu: &Cpu, bus: &Bus| {
+            assert_eq!(bus.read_u8(MEM_ADDR), 0x01);
+            assert_flags(cpu, true, true, true, true);
+        }
+    );
 }
