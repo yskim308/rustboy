@@ -30,8 +30,8 @@ impl Bus {
         let ppu_registers = PpuRegisters {
             lcdc: self.read_u8(0xFF40),
 
-            scx: self.read_u8(0xFF42),
-            scy: self.read_u8(0xFF43),
+            scy: self.read_u8(0xFF42),
+            scx: self.read_u8(0xFF43),
 
             wy: self.read_u8(0xFF4A),
             wx: self.read_u8(0xFF4B),
