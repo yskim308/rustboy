@@ -19,7 +19,7 @@ struct Sprite {
 }
 
 #[derive(Default)]
-pub struct PpuRegisters {
+struct PpuRegisters {
     pub lcdc: u8,
 
     pub scx: u8,
@@ -61,9 +61,26 @@ pub(super) struct Ppu {
 }
 
 impl Ppu {
-    pub fn step(&mut self, cycles: u8, ppu_registers: PpuRegisters) -> (bool, bool) {
+    pub fn new() -> Self {
+        Self {
+            registers: PpuRegisters {
+                lcdc: 0x91,
+                scx: 0x00,
+                scy: 0x00,
+                wy: 0x00,
+                wx: 0x00,
+                obp0: 0xFF,
+                obp1: 0xFF,
+                bgp: 0xFC,
+                lyc: 0x00,
+                stat: 0x85,
+            },
+            ..Self::default()
+        }
+    }
+
+    pub fn step(&mut self, cycles: u8) -> (bool, bool) {
         self.cycle = self.cycle.wrapping_add(cycles as u16);
-        self.registers = ppu_registers;
         self.init_palettes();
 
         if self.registers.lcdc & 0x80 == 0 {
@@ -83,24 +100,50 @@ impl Ppu {
         &self.frame_buffer
     }
 
-    pub fn ly(&self) -> u8 {
-        self.ly
+    pub fn read_io(&self, address: u16) -> u8 {
+        match address {
+            0xFF40 => self.registers.lcdc,
+            0xFF41 => self.stat_value(),
+            0xFF42 => self.registers.scy,
+            0xFF43 => self.registers.scx,
+            0xFF44 => self.ly,
+            0xFF45 => self.registers.lyc,
+            0xFF47 => self.registers.bgp,
+            0xFF48 => self.registers.obp0,
+            0xFF49 => self.registers.obp1,
+            0xFF4A => self.registers.wy,
+            0xFF4B => self.registers.wx,
+            _ => unreachable!("PPU IO read ({address:#06X}) outside supported register range"),
+        }
     }
 
-    pub fn reset_ly(&mut self) {
-        self.ly = 0;
+    pub fn write_io(&mut self, address: u16, data: u8) {
+        match address {
+            0xFF40 => self.registers.lcdc = data,
+            0xFF41 => self.registers.stat = data & 0xF8,
+            0xFF42 => self.registers.scy = data,
+            0xFF43 => self.registers.scx = data,
+            0xFF44 => self.ly = 0,
+            0xFF45 => self.registers.lyc = data,
+            0xFF47 => self.registers.bgp = data,
+            0xFF48 => self.registers.obp0 = data,
+            0xFF49 => self.registers.obp1 = data,
+            0xFF4A => self.registers.wy = data,
+            0xFF4B => self.registers.wx = data,
+            _ => unreachable!("PPU IO write ({address:#06X}) outside supported register range"),
+        }
     }
 
-    pub fn get_stat(&self, stat_register: u8, lyc: u8) -> u8 {
+    fn stat_value(&self) -> u8 {
         let mode = match self.state {
             PpuState::HBlank => 0,
             PpuState::VBlank => 1,
             PpuState::OamSearch => 2,
             PpuState::PixelTransfer => 3,
         };
-        let coincidence = u8::from(self.ly == lyc) << 2;
+        let coincidence = u8::from(self.ly == self.registers.lyc) << 2;
 
-        (stat_register & 0xF8) | coincidence | mode
+        (self.registers.stat & 0xF8) | coincidence | mode
     }
 
     // ========================= STATE MACHINE ======================

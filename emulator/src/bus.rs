@@ -1,9 +1,4 @@
-use crate::bus::{
-    cartridge::Cartridge,
-    ppu::{Ppu, PpuRegisters},
-    serial::Serial,
-    wram::Wram,
-};
+use crate::bus::{cartridge::Cartridge, ppu::Ppu, serial::Serial, wram::Wram};
 
 pub mod cartridge;
 mod ppu;
@@ -27,26 +22,7 @@ pub struct Bus {
 
 impl Bus {
     pub fn synchronize(&mut self, cycles: u8) {
-        let ppu_registers = PpuRegisters {
-            lcdc: self.read_u8(0xFF40),
-
-            scy: self.read_u8(0xFF42),
-            scx: self.read_u8(0xFF43),
-
-            wy: self.read_u8(0xFF4A),
-            wx: self.read_u8(0xFF4B),
-
-            obp0: self.read_u8(0xFF48),
-            obp1: self.read_u8(0xFF49),
-
-            stat: self.read_u8(0xFF41),
-            lyc: self.read_u8(0xFF45),
-
-            bgp: self.read_u8(0xFF47),
-        };
-        let (request_vblank_interrupt, request_stat_interrupt) =
-            self.ppu.step(cycles, ppu_registers);
-        self.io_bucket[(0xFF44 - 0xFF00) as usize] = self.ppu.ly();
+        let (request_vblank_interrupt, request_stat_interrupt) = self.ppu.step(cycles);
 
         if request_vblank_interrupt {
             self.io_bucket[(0xFF0F - 0xFF00) as usize] |= 0x01;
@@ -73,7 +49,7 @@ impl Bus {
             io_bucket,
             hram: [0; 127],
             ie_register: 0,
-            ppu: Ppu::default(),
+            ppu: Ppu::new(),
         }
     }
 
@@ -110,11 +86,7 @@ impl Bus {
     fn read_io(&self, address: u16) -> u8 {
         match address {
             0xFF01..=0xFF02 => self.serial.read(address),
-            0xFF41 => self.ppu.get_stat(
-                self.io_bucket[(0xFF41 - 0xFF00) as usize],
-                self.io_bucket[(0xFF45 - 0xFF00) as usize],
-            ),
-            0xFF44 => self.ppu.ly(),
+            0xFF40..=0xFF45 | 0xFF47..=0xFF4B => self.ppu.read_io(address),
             _ => self.io_bucket[(address - 0xFF00) as usize],
         }
     }
@@ -123,10 +95,7 @@ impl Bus {
         match address {
             0xFF01..=0xFF02 => self.serial.write(address, data),
             0xFF46 => self.oam_dma_transfer(data),
-            0xFF44 => {
-                self.ppu.reset_ly();
-                self.io_bucket[(address - 0xFF00) as usize] = 0;
-            }
+            0xFF40..=0xFF45 | 0xFF47..=0xFF4B => self.ppu.write_io(address, data),
             _ => self.io_bucket[(address - 0xFF00) as usize] = data,
         }
     }
@@ -167,17 +136,6 @@ fn set_post_boot_io_defaults(io_bucket: &mut [u8; 128]) {
         (0xFF24, 0x77),
         (0xFF25, 0xF3),
         (0xFF26, 0xF1),
-        (0xFF40, 0x91),
-        (0xFF41, 0x85),
-        (0xFF42, 0x00),
-        (0xFF43, 0x00),
-        (0xFF44, 0x00),
-        (0xFF45, 0x00),
-        (0xFF47, 0xFC),
-        (0xFF48, 0xFF),
-        (0xFF49, 0xFF),
-        (0xFF4A, 0x00),
-        (0xFF4B, 0x00),
         (0xFF0F, 0xE1),
     ];
 
