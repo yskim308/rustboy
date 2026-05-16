@@ -25,6 +25,7 @@ pub struct Bus {
 impl Bus {
     pub fn synchronize(&mut self, cycles: u8) {
         let (request_vblank_interrupt, request_stat_interrupt) = self.ppu.step(cycles);
+        let request_timer_interrupt = self.timer.step(cycles);
 
         if request_vblank_interrupt {
             self.io_bucket[(0xFF0F - 0xFF00) as usize] |= 0x01;
@@ -32,6 +33,10 @@ impl Bus {
 
         if request_stat_interrupt {
             self.io_bucket[(0xFF0F - 0xFF00) as usize] |= 0x02;
+        }
+
+        if request_timer_interrupt {
+            self.io_bucket[(0xFF0F - 0xFF00) as usize] |= 0x04;
         }
     }
 
