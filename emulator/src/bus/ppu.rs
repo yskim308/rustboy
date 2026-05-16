@@ -50,6 +50,8 @@ pub(super) struct Ppu {
     saved_sprites: Vec<Sprite>,
     pixel_transferred: bool,
 
+    window_line_counter: u8,
+
     bg_priority_buffer: [bool; 160],
     bg_palette: [u8; 4],
     obj_palette_0: [u8; 4],
@@ -132,7 +134,9 @@ impl Ppu {
         if !self.pixel_transferred {
             if self.registers.lcdc & 0x01 != 0 {
                 self.draw_background();
-                self.draw_window();
+                if self.draw_window() {
+                    self.window_line_counter += 1;
+                }
             } else {
                 for i in 0..160 {
                     self.frame_buffer[(self.ly as usize) * 160 + i] = 0;
@@ -193,6 +197,7 @@ impl Ppu {
     }
 
     fn vblank(&mut self) -> (bool, bool) {
+        self.window_line_counter = 0;
         if self.cycle >= SCANLINE_CYCLES {
             self.cycle -= SCANLINE_CYCLES;
             self.ly += 1;
@@ -231,6 +236,7 @@ impl Ppu {
         self.saved_sprites.clear();
         self.bg_priority_buffer.fill(false);
         self.frame_buffer.fill(0);
+        self.window_line_counter = 0;
     }
     // =========================== HELPERS =========================
     fn get_tile_map_address(&self, bit_on: bool) -> u16 {
@@ -311,9 +317,9 @@ impl Ppu {
             }
         }
     }
-    fn draw_window(&mut self) {
+    fn draw_window(&mut self) -> bool {
         if (self.registers.lcdc & 0x20) == 0 || self.ly < self.registers.wy {
-            return;
+            return false;
         }
 
         let bit_6_on = (self.registers.lcdc & 0x40) != 0;
@@ -322,7 +328,7 @@ impl Ppu {
         let bit_4_on = (self.registers.lcdc & 0x10) != 0;
         let data_base_address = self.get_data_base_address(bit_4_on);
 
-        let window_y = self.ly - self.registers.wy;
+        let window_y = self.window_line_counter;
         let tile_row = (window_y / 8) as u16;
 
         let screen_start_x = if self.registers.wx < 7 {
@@ -330,6 +336,10 @@ impl Ppu {
         } else {
             self.registers.wx - 7
         };
+
+        if screen_start_x >= 160 {
+            return false;
+        }
 
         for i in screen_start_x..160 {
             let window_x = i + 7 - self.registers.wx;
@@ -341,6 +351,8 @@ impl Ppu {
             self.frame_buffer[(self.ly as usize * 160) + (i as usize)] =
                 self.bg_palette[pixel_val as usize];
         }
+
+        return true;
     }
 
     fn draw_background(&mut self) {
@@ -447,16 +459,22 @@ impl Default for Ppu {
             ly: 0,
             cycle: 0,
             state: PpuState::OamSearch,
+            registers: PpuRegisters::default(),
+
             vram: [0; 8192],
             oam: [0; 160],
-            pixel_transferred: false,
+
             oam_searched: false,
             saved_sprites: Vec::with_capacity(10),
+            pixel_transferred: false,
+
+            window_line_counter: 0,
+
             bg_priority_buffer: [false; 160],
             bg_palette: [0; 4],
             obj_palette_0: [0; 4],
             obj_palette_1: [0; 4],
-            registers: PpuRegisters::default(),
+
             frame_buffer: [0; 160 * 144],
         }
     }
