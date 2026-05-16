@@ -21,13 +21,20 @@ struct Sprite {
 #[derive(Default)]
 pub struct PpuRegisters {
     pub lcdc: u8,
+
     pub scx: u8,
     pub scy: u8,
+
     pub wy: u8,
     pub wx: u8,
+
     pub obp0: u8,
     pub obp1: u8,
+
     pub bgp: u8,
+
+    pub lyc: u8,
+    pub stat: u8,
 }
 
 pub(super) struct Ppu {
@@ -52,24 +59,22 @@ pub(super) struct Ppu {
 }
 
 impl Ppu {
-    pub fn step(&mut self, cycles: u8, ppu_registers: PpuRegisters) -> bool {
+    pub fn step(&mut self, cycles: u8, ppu_registers: PpuRegisters) -> (bool, bool) {
         self.cycle = self.cycle.wrapping_add(cycles as u16);
         self.registers = ppu_registers;
         self.init_palettes();
 
         if self.registers.lcdc & 0x80 == 0 {
             self.reset_for_disabled_lcd();
-            return false;
+            return (false, false);
         }
 
         match self.state {
             PpuState::OamSearch => self.search_oam(self.registers.lcdc),
             PpuState::PixelTransfer => self.transfer_pixels(),
-            PpuState::HBlank => return self.hblank(),
-            PpuState::VBlank => return self.vblank(),
+            PpuState::HBlank => self.hblank(),
+            PpuState::VBlank => self.vblank(),
         }
-
-        false
     }
 
     pub fn get_frame_buffer(&self) -> &[u8] {
@@ -84,7 +89,7 @@ impl Ppu {
         self.ly = 0;
     }
 
-    pub fn stat(&self, stat_register: u8, lyc: u8) -> u8 {
+    pub fn get_stat(&self, stat_register: u8, lyc: u8) -> u8 {
         let mode = match self.state {
             PpuState::HBlank => 0,
             PpuState::VBlank => 1,
@@ -98,7 +103,7 @@ impl Ppu {
 
     // ========================= STATE MACHINE ======================
 
-    fn search_oam(&mut self, lcdc: u8) {
+    fn search_oam(&mut self, lcdc: u8) -> (bool, bool) {
         if self.state != PpuState::OamSearch {
             panic!("Trying to search OAM when PPU State is not OamSearch");
         }
@@ -115,9 +120,11 @@ impl Ppu {
             self.cycle -= OAM_SEARCH_CYCLES;
             self.oam_searched = false;
         }
+
+        (false, false)
     }
 
-    fn transfer_pixels(&mut self) {
+    fn transfer_pixels(&mut self) -> (bool, bool) {
         if self.state != PpuState::PixelTransfer {
             panic!("Attempted pixel transfer in non pixel transfer state");
         }
@@ -143,41 +150,76 @@ impl Ppu {
             self.state = PpuState::HBlank;
             self.cycle -= PIXEL_TRANSFER_CYCLES;
             self.pixel_transferred = false;
+
+            let stat_interrupt = (self.registers.stat & 0x08) != 0;
+            return (false, stat_interrupt);
         }
+
+        (false, false)
     }
 
-    fn hblank(&mut self) -> bool {
+    fn hblank(&mut self) -> (bool, bool) {
         if self.state != PpuState::HBlank {
             panic!("Attempted HBlank in non HBlank state");
         }
 
         if self.cycle >= HBLANK_CYCLES {
             self.cycle -= HBLANK_CYCLES;
-
             self.ly += 1;
+
+            let mut req_stat = false;
+
+            if self.ly == self.registers.lyc && (self.registers.stat & 0x40) != 0 {
+                req_stat = true;
+            }
+
             if self.ly == 144 {
                 self.state = PpuState::VBlank;
-                return true;
+
+                if (self.registers.stat & 0x10) != 0 {
+                    req_stat = true;
+                }
+                return (true, req_stat);
             } else {
                 self.state = PpuState::OamSearch;
+                if (self.registers.stat & 0x20) != 0 {
+                    req_stat = true;
+                }
+                return (false, req_stat);
             }
         }
 
-        false
+        (false, false)
     }
 
-    fn vblank(&mut self) -> bool {
+    fn vblank(&mut self) -> (bool, bool) {
         if self.cycle >= SCANLINE_CYCLES {
             self.cycle -= SCANLINE_CYCLES;
             self.ly += 1;
 
+            let mut req_stat = false;
+
             if self.ly >= 154 {
                 self.ly = 0;
                 self.state = PpuState::OamSearch;
+
+                if self.ly == self.registers.lyc && (self.registers.stat & 0x40) != 0 {
+                    req_stat = true;
+                }
+
+                if (self.registers.stat & 0x20) != 0 {
+                    req_stat = true;
+                }
+            } else {
+                if self.ly == self.registers.lyc && (self.registers.stat & 0x40) != 0 {
+                    req_stat = true;
+                }
             }
+
+            return (false, req_stat);
         }
 
-        false
+        (false, false)
     }
 
     fn reset_for_disabled_lcd(&mut self) {

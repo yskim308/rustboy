@@ -29,19 +29,31 @@ impl Bus {
     pub fn synchronize(&mut self, cycles: u8) {
         let ppu_registers = PpuRegisters {
             lcdc: self.read_u8(0xFF40),
+
             scx: self.read_u8(0xFF42),
             scy: self.read_u8(0xFF43),
+
             wy: self.read_u8(0xFF4A),
             wx: self.read_u8(0xFF4B),
+
             obp0: self.read_u8(0xFF48),
             obp1: self.read_u8(0xFF49),
+
+            stat: self.read_u8(0xFF41),
+            lyc: self.read_u8(0xFF45),
+
             bgp: self.read_u8(0xFF47),
         };
-        let entered_vblank = self.ppu.step(cycles, ppu_registers);
+        let (request_vblank_interrupt, request_stat_interrupt) =
+            self.ppu.step(cycles, ppu_registers);
         self.io_bucket[(0xFF44 - 0xFF00) as usize] = self.ppu.ly();
 
-        if entered_vblank {
+        if request_vblank_interrupt {
             self.io_bucket[(0xFF0F - 0xFF00) as usize] |= 0x01;
+        }
+
+        if request_stat_interrupt {
+            self.io_bucket[(0xFF0F - 0xFF00) as usize] |= 0x02;
         }
     }
 
@@ -98,7 +110,7 @@ impl Bus {
     fn read_io(&self, address: u16) -> u8 {
         match address {
             0xFF01..=0xFF02 => self.serial.read(address),
-            0xFF41 => self.ppu.stat(
+            0xFF41 => self.ppu.get_stat(
                 self.io_bucket[(0xFF41 - 0xFF00) as usize],
                 self.io_bucket[(0xFF45 - 0xFF00) as usize],
             ),
