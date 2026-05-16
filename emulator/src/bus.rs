@@ -1,8 +1,9 @@
-use crate::bus::{cartridge::Cartridge, ppu::Ppu, serial::Serial, wram::Wram};
+use crate::bus::{cartridge::Cartridge, ppu::Ppu, serial::Serial, timer::Timer, wram::Wram};
 
 pub mod cartridge;
 mod ppu;
 pub mod serial;
+mod timer;
 pub mod wram;
 
 pub struct Bus {
@@ -18,6 +19,7 @@ pub struct Bus {
     ie_register: u8, // FFFF
 
     ppu: Ppu,
+    timer: Timer,
 }
 
 impl Bus {
@@ -50,6 +52,7 @@ impl Bus {
             hram: [0; 127],
             ie_register: 0,
             ppu: Ppu::new(),
+            timer: Timer::new(),
         }
     }
 
@@ -86,6 +89,7 @@ impl Bus {
     fn read_io(&self, address: u16) -> u8 {
         match address {
             0xFF01..=0xFF02 => self.serial.read(address),
+            0xFF04..=0xFF07 => self.timer.read_u8(address),
             0xFF40..=0xFF45 | 0xFF47..=0xFF4B => self.ppu.read_io(address),
             _ => self.io_bucket[(address - 0xFF00) as usize],
         }
@@ -94,6 +98,7 @@ impl Bus {
     fn write_io(&mut self, address: u16, data: u8) {
         match address {
             0xFF01..=0xFF02 => self.serial.write(address, data),
+            0xFF04..=0xFF07 => self.timer.write_u8(address, data),
             0xFF46 => self.oam_dma_transfer(data),
             0xFF40..=0xFF45 | 0xFF47..=0xFF4B => self.ppu.write_io(address, data),
             _ => self.io_bucket[(address - 0xFF00) as usize] = data,
