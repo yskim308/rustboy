@@ -16,22 +16,24 @@ We'll see how it goes...
 
 ## Current Progress
 
+Non-color mode games can be displayed, to run, for the repo and at the repo root run
+
+`cargo run --release -p gui /path/to/game`
+
 ### Currently Working On:
 
-Right now, I'm currently working on the PPU in DMG (Non color) mode.
-
-The actual Gameboy hardware does FIFO pushing with each pixel, but for now, I'm implementing it line by line.
-
-It should work for ~90% of games. I'll come back and do 100% accurate emulation once the other areas are implemented.
+Games can run, but there is no functionality for user input. I need to implement joypad interrupts.
 
 ### Memory Map / Bus
 
-I've now implemented the following parts of the memory map:
+I've now implemented the following parts of the memory map / IO:
 
 - Cartridge (without MBC controllers)
 - Serial Port
+- PPU
 - VRAM (as part of PPU)
 - OAM (as part of PPU)
+- Timer (and its related registers)
 
 I've yet to implement the following (They are currently 'stubs' and implemented as a static array)
 
