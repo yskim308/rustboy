@@ -316,6 +316,8 @@ impl Ppu {
                 });
             }
         }
+
+        self.saved_sprites.sort_by_key(|s| s.x);
     }
     fn draw_window(&mut self) -> bool {
         if (self.registers.lcdc & 0x20) == 0 || self.ly < self.registers.wy {
