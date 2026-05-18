@@ -42,7 +42,6 @@ impl Bus {
 
         Self {
             cartridge,
-            eram: [0; 8192],
             wram: Wram::new(),
             serial: Serial::new(),
             io_bucket,
@@ -81,9 +80,8 @@ impl Bus {
 
     pub fn read_u8(&self, address: u16) -> u8 {
         match address {
-            0x0000..=0x7FFF => self.cartridge.read_u8(address),
+            0x0000..=0x7FFF | 0xA000..=0xBFFF => self.cartridge.read_u8(address),
             0x8000..=0x9FFF => self.ppu.read_u8(address),
-            0xA000..=0xBFFF => self.eram[(address - 0xA000) as usize],
             0xC000..=0xDFFF => self.wram.read_u8(address - 0xC000),
             0xE000..=0xFDFF => self.wram.read_u8(address - 0xE000), // echo ram
             0xFE00..=0xFE9F => self.ppu.read_u8(address),
@@ -96,9 +94,8 @@ impl Bus {
 
     pub fn write_u8(&mut self, address: u16, data: u8) {
         match address {
-            0x0000..=0x7FFF => log::trace!("accessed ROM as write for MBC"),
+            0x0000..=0x7FFF | 0xA000..=0xBFFF => self.cartridge.write_u8(address, data),
             0x8000..=0x9FFF => self.ppu.write_u8(address, data),
-            0xA000..=0xBFFF => self.eram[(address - 0xA000) as usize] = data,
             0xC000..=0xDFFF => self.wram.write_u8(address - 0xC000, data),
             0xE000..=0xFDFF => self.wram.write_u8(address - 0xE000, data), // echo ram
             0xFE00..=0xFE9F => self.ppu.write_u8(address, data),
