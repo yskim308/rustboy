@@ -22,26 +22,39 @@ pub struct Bus {
     timer: Timer,
 }
 
+#[repr(u8)]
+pub enum InterruptType {
+    VBlank = 0,
+    LcdStat = 1,
+    Timer = 2,
+    Serial = 3,
+    Joypad = 4,
+}
+
 impl Bus {
     pub fn synchronize(&mut self, cycles: u8) {
         let (request_vblank_interrupt, request_stat_interrupt) = self.ppu.step(cycles);
         let request_timer_interrupt = self.timer.step(cycles);
 
         if request_vblank_interrupt {
-            self.io_bucket[(0xFF0F - 0xFF00) as usize] |= 0x01;
+            self.request_interrupt(InterruptType::VBlank);
         }
 
         if request_stat_interrupt {
-            self.io_bucket[(0xFF0F - 0xFF00) as usize] |= 0x02;
+            self.request_interrupt(InterruptType::LcdStat);
         }
 
         if request_timer_interrupt {
-            self.io_bucket[(0xFF0F - 0xFF00) as usize] |= 0x04;
+            self.request_interrupt(InterruptType::Timer);
         }
     }
 
     pub fn get_ppu_frame_buffer(&self) -> &[u8] {
         self.ppu.get_frame_buffer()
+    }
+
+    pub fn request_interrupt(&mut self, interrupt: InterruptType) {
+        self.io_bucket[(0xFF0F - 0xFF00) as usize] |= 1 << (interrupt as u8);
     }
 
     pub fn new(cartridge: Cartridge) -> Self {
