@@ -16,13 +16,21 @@ We'll see how it goes...
 
 ## Current Progress
 
-Non-color mode games can be displayed, to run, for the repo and at the repo root run
+The very basic prototype works!!! To run, (after installing Cargo), run the following command 
 
 `cargo run --release -p gui /path/to/game`
 
+<img width="483" height="413" alt="image" src="https://github.com/user-attachments/assets/77b389d0-0313-42b6-aff9-d70e4c9d37e9" />
+
+
 ### Currently Working On:
 
-Games can run, but there is no functionality for user input. I need to implement joypad interrupts.
+Basic games work with no issues. Next up is 
+
+1. Audio (APU)
+2. CGB (color mode for gameboy color)
+3. FIFO / DMA based PPU processing for better accuracy on more complex games
+4. TUI and Web (WASM) based rendering 
 
 ### Memory Map / Bus
 
@@ -34,10 +42,7 @@ I've now implemented the following parts of the memory map / IO:
 - VRAM (as part of PPU)
 - OAM (as part of PPU)
 - Timer (and its related registers)
-
-I've yet to implement the following (They are currently 'stubs' and implemented as a static array)
-
-- ERAM
+   ERAM
 - WRAM
 - IO
 - HRAM
@@ -47,5 +52,3 @@ I've yet to implement the following (They are currently 'stubs' and implemented 
 All ~500 instructions are implemented, and I am currently going through the Blargg test suite
 
 [Test Suite](https://github.com/retrio/gb-test-roms/tree/c240dd7d700e5c0b00a7bbba52b53e4ee67b5f15)
-
-Currently, only interrupts are not fully implemented. I need to finish the PPU, Audio, and IO first.
