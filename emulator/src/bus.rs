@@ -1,6 +1,7 @@
 use crate::bus::{cartridge::Cartridge, ppu::Ppu, serial::Serial, timer::Timer, wram::Wram};
 
 pub mod cartridge;
+mod joypad;
 mod ppu;
 pub mod serial;
 mod timer;
