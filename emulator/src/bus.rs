@@ -1,7 +1,9 @@
-use crate::bus::{cartridge::Cartridge, ppu::Ppu, serial::Serial, timer::Timer, wram::Wram};
+use crate::bus::{
+    cartridge::Cartridge, joypad::Joypad, ppu::Ppu, serial::Serial, timer::Timer, wram::Wram,
+};
 
 pub mod cartridge;
-mod joypad;
+pub mod joypad;
 mod ppu;
 pub mod serial;
 mod timer;
@@ -21,6 +23,7 @@ pub struct Bus {
 
     ppu: Ppu,
     timer: Timer,
+    pub joypad: Joypad,
 }
 
 #[repr(u8)]
@@ -33,6 +36,24 @@ pub enum InterruptType {
 }
 
 impl Bus {
+    pub fn new(cartridge: Cartridge) -> Self {
+        let mut io_bucket = [0; 128];
+        set_post_boot_io_defaults(&mut io_bucket);
+
+        Self {
+            cartridge,
+            eram: [0; 8192],
+            wram: Wram::new(),
+            serial: Serial::new(),
+            io_bucket,
+            hram: [0; 127],
+            ie_register: 0,
+            ppu: Ppu::new(),
+            timer: Timer::new(),
+            joypad: Joypad::default(),
+        }
+    }
+
     pub fn synchronize(&mut self, cycles: u8) {
         let (request_vblank_interrupt, request_stat_interrupt) = self.ppu.step(cycles);
         let request_timer_interrupt = self.timer.step(cycles);
@@ -56,23 +77,6 @@ impl Bus {
 
     pub fn request_interrupt(&mut self, interrupt: InterruptType) {
         self.io_bucket[(0xFF0F - 0xFF00) as usize] |= 1 << (interrupt as u8);
-    }
-
-    pub fn new(cartridge: Cartridge) -> Self {
-        let mut io_bucket = [0; 128];
-        set_post_boot_io_defaults(&mut io_bucket);
-
-        Self {
-            cartridge,
-            eram: [0; 8192],
-            wram: Wram::new(),
-            serial: Serial::new(),
-            io_bucket,
-            hram: [0; 127],
-            ie_register: 0,
-            ppu: Ppu::new(),
-            timer: Timer::new(),
-        }
     }
 
     pub fn read_u8(&self, address: u16) -> u8 {
