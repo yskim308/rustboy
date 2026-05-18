@@ -1,5 +1,6 @@
 use std::{env, fs, io};
 
+use emulator::bus::joypad::JoypadInput;
 use emulator::{Bus, Cartridge, Cpu, Gameboy};
 use minifb::{Key, Window, WindowOptions};
 
@@ -40,21 +41,44 @@ fn main() {
     window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
+        for key in window.get_keys_pressed(minifb::KeyRepeat::No) {
+            if let Some(gb_button) = map_key_to_joypad(key) {
+                gameboy.press_button(gb_button);
+            }
+        }
+
+        // Handle newly released keys (Key Up)
+        for key in window.get_keys_released() {
+            if let Some(gb_button) = map_key_to_joypad(key) {
+                gameboy.release_button(gb_button);
+            }
+        }
         gameboy.step_frame();
 
         let gb_buffer = gameboy.get_frame_buffer();
 
-        // 3. Translate the u8 shades into u32 ARGB colors
         for (i, &pixel_shade) in gb_buffer.iter().enumerate() {
-            // Guard against out-of-bounds if your palette data ever exceeds 3
             let color_index = (pixel_shade & 0x03) as usize;
             display_buffer[i] = PALETTE[color_index];
         }
 
-        // 4. Update the window
         window
             .update_with_buffer(&display_buffer, WIDTH, HEIGHT)
             .unwrap();
+    }
+}
+
+fn map_key_to_joypad(key: Key) -> Option<JoypadInput> {
+    match key {
+        Key::J => Some(JoypadInput::A),
+        Key::K => Some(JoypadInput::B),
+        Key::Space => Some(JoypadInput::Select),
+        Key::Enter => Some(JoypadInput::Start),
+        Key::D => Some(JoypadInput::Right),
+        Key::A => Some(JoypadInput::Left),
+        Key::W => Some(JoypadInput::Up),
+        Key::S => Some(JoypadInput::Down),
+        _ => None,
     }
 }
 

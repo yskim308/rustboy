@@ -111,10 +111,7 @@ impl Bus {
 
     fn read_io(&self, address: u16) -> u8 {
         match address {
-            0xFF00 => {
-                let select_bits = self.io_bucket[0];
-                select_bits | 0x0F
-            }
+            0xFF00 => self.joypad.read_register(),
             0xFF01..=0xFF02 => self.serial.read(address),
             0xFF04..=0xFF07 => self.timer.read_u8(address),
             0xFF40..=0xFF45 | 0xFF47..=0xFF4B => self.ppu.read_io(address),
@@ -124,10 +121,7 @@ impl Bus {
 
     fn write_io(&mut self, address: u16, data: u8) {
         match address {
-            0xFF00 => {
-                let current = self.io_bucket[0];
-                self.io_bucket[0] = (current & 0xCF) | (data & 0x30);
-            }
+            0xFF00 => self.joypad.write_register(data),
             0xFF01..=0xFF02 => self.serial.write(address, data),
             0xFF04..=0xFF07 => self.timer.write_u8(address, data),
             0xFF46 => self.oam_dma_transfer(data),
@@ -150,7 +144,6 @@ impl Bus {
 
 fn set_post_boot_io_defaults(io_bucket: &mut [u8; 128]) {
     let defaults = [
-        (0xFF00, 0xCF),
         (0xFF05, 0x00),
         (0xFF06, 0x00),
         (0xFF07, 0x00),

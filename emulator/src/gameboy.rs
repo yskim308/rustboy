@@ -35,4 +35,8 @@ impl Gameboy {
             self.bus.request_interrupt(InterruptType::Joypad);
         }
     }
+
+    pub fn release_button(&mut self, button: JoypadInput) {
+        self.bus.joypad.release_button(button);
+    }
 }
