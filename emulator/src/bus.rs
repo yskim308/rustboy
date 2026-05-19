@@ -11,7 +11,6 @@ pub mod wram;
 
 pub struct Bus {
     cartridge: Cartridge, // 0000 - 7FFF
-    eram: [u8; 8192],     // A000 - BFFF
     wram: Wram,           // C000 - DFFF + E000 - FDFF (echo ram)
 
     // IO: FF00 - FF7F

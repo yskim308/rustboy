@@ -1,5 +1,3 @@
-use crate::bus::cartridge;
-
 pub struct Cartridge {
     rom: Vec<u8>,
     eram: Vec<u8>,
@@ -10,6 +8,7 @@ pub struct Cartridge {
 enum Mbc {
     NoMBC,
     Mbc1(Mbc1),
+    Mbc3(Mbc3),
 }
 
 #[derive(PartialEq)]
@@ -19,6 +18,9 @@ struct Mbc1 {
     ram_bank_number: u8,
     ram_banking_mode: bool,
 }
+
+#[derive(PartialEq)]
+struct Mbc3 {}
 
 impl Mbc1 {
     fn new() -> Self {
@@ -76,6 +78,30 @@ impl Cartridge {
         }
     }
 
+    pub fn read_u8(&self, address: u16) -> u8 {
+        match address {
+            0x0000..=0x3FFF => self.read_bank0(address),
+            0x4000..=0x7FFF => self.read_bank1(address),
+            0xA000..=0xBFFF => self.read_ram_bank(address),
+            _ => 0xFF,
+        }
+    }
+
+    pub fn read_u16(&self, address: u16) -> u16 {
+        u16::from_le_bytes([self.read_u8(address), self.read_u8(address.wrapping_add(1))])
+    }
+
+    pub fn write_u8(&mut self, address: u16, data: u8) {
+        match address {
+            0x0000..=0x7FFF => match &mut self.mbc {
+                Mbc::NoMBC => (),
+                Mbc::Mbc1(mbc1) => mbc1.write_u8(address, data),
+            },
+            0xA000..=0xBFFF => self.write_ram(address, data),
+            _ => (),
+        }
+    }
+
     fn read_bank0(&self, address: u16) -> u8 {
         let bank = match &self.mbc {
             Mbc::NoMBC => 0,
@@ -127,30 +153,6 @@ impl Cartridge {
                 let ram_address = (bank * 0x2000) + (address - 0xA000) as usize;
                 self.eram[ram_address % self.eram.len()]
             }
-        }
-    }
-
-    pub fn read_u8(&self, address: u16) -> u8 {
-        match address {
-            0x0000..=0x3FFF => self.read_bank0(address),
-            0x4000..=0x7FFF => self.read_bank1(address),
-            0xA000..=0xBFFF => self.read_ram_bank(address),
-            _ => 0xFF,
-        }
-    }
-
-    pub fn read_u16(&self, address: u16) -> u16 {
-        u16::from_le_bytes([self.read_u8(address), self.read_u8(address.wrapping_add(1))])
-    }
-
-    pub fn write_u8(&mut self, address: u16, data: u8) {
-        match address {
-            0x0000..=0x7FFF => match &mut self.mbc {
-                Mbc::NoMBC => (),
-                Mbc::Mbc1(mbc1) => mbc1.write_u8(address, data),
-            },
-            0xA000..=0xBFFF => self.write_ram(address, data),
-            _ => (),
         }
     }
 
