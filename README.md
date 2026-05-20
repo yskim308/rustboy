@@ -16,17 +16,31 @@ We'll see how it goes...
 
 ## Current Progress
 
-The very basic prototype works!!! To run, (after installing Cargo), run the following command 
+The very basic prototype works!!! To run, (after installing Cargo), run the following command at the project root
 
-`cargo run --release -p gui /path/to/game`
+```bash
+cargo run --release -p gui /path/to/game
+```
 
-<img width="483" height="413" alt="image" src="https://github.com/user-attachments/assets/77b389d0-0313-42b6-aff9-d70e4c9d37e9" />
+<img width="356" height="331" alt="image" src="https://github.com/user-attachments/assets/4be970d4-e977-4045-82a0-77759ea9bded" />
+<img width="331" height="318" alt="image" src="https://github.com/user-attachments/assets/3abf232f-ee8d-4657-8e15-fdc47c51b410" />
+<img width="328" height="321" alt="image" src="https://github.com/user-attachments/assets/ee2514e5-3168-4890-8121-544cbe687961" />
 
+
+
+### CPU
+
+All ~500 instructions are implemented, abd the entire Blargg Test suite passes. 
+
+[Test Suite](https://github.com/retrio/gb-test-roms/tree/c240dd7d700e5c0b00a7bbba52b53e4ee67b5f15)
+
+I am now working on the other parts of the console. 
 
 ### Currently Working On:
 
 Basic games work with no issues. Next up is 
 
+0. ~100% Multi-Bank controller support (currently MBC1 and MBC3 are implemented)
 1. Audio (APU)
 2. CGB (color mode for gameboy color)
 3. FIFO / DMA based PPU processing for better accuracy on more complex games
@@ -42,13 +56,9 @@ I've now implemented the following parts of the memory map / IO:
 - VRAM (as part of PPU)
 - OAM (as part of PPU)
 - Timer (and its related registers)
-   ERAM
+- ERAM (as part of the Cartridge)
 - WRAM
 - IO
 - HRAM
 
-### CPU
 
-All ~500 instructions are implemented, and I am currently going through the Blargg test suite
-
-[Test Suite](https://github.com/retrio/gb-test-roms/tree/c240dd7d700e5c0b00a7bbba52b53e4ee67b5f15)
