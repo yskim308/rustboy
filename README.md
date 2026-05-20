@@ -25,6 +25,8 @@ cargo run --release -p gui /path/to/game
 <img width="356" height="331" alt="image" src="https://github.com/user-attachments/assets/4be970d4-e977-4045-82a0-77759ea9bded" />
 <img width="331" height="318" alt="image" src="https://github.com/user-attachments/assets/3abf232f-ee8d-4657-8e15-fdc47c51b410" />
 <img width="328" height="321" alt="image" src="https://github.com/user-attachments/assets/ee2514e5-3168-4890-8121-544cbe687961" />
+<img width="323" height="301" alt="image" src="https://github.com/user-attachments/assets/e9fbf624-1bc9-44fb-a667-3a0d6638d9a4" />
+
 
 
 
