@@ -62,7 +62,7 @@ impl Mbc3 {
         match address {
             0x0000..=0x1FFF => self.ram_timer_enable = (data & 0x0F) == 0x0A,
             0x2000..=0x3FFF => {
-                let bank = 0x7F;
+                let bank = data & 0x7F;
                 self.rom_bank_number = if bank == 0 { 1 } else { bank }
             }
             0x4000..=0x5FFF => self.bank_or_register_select = data,
